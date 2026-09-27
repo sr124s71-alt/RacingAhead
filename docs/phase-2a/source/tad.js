@@ -1,26 +1,27 @@
 const L = require('./lib');
 const { P, H1, H1n, H2, H3, B, N, T, C, IMG, SP, BR, cover, contents, build } = L;
 const OUT = process.argv[2];
+const V = { version: 'v2.0 (AI-native release train)', status: 'Issued for client review — supersedes v1.0' };
 
 const toc = ['1. Executive summary', '2. The problem, technically', '3. Architecture principles', '4. Starting from what is live: Phase 1 assessment',
-  '5. Target architecture', '6. Module-by-module technical approach', '7. Cross-cutting quality attributes (NFRs)', '8. Engineering practices and standards',
-  '9. Technical plan for the 20 October 2026 launch', '10. Data migration approach', '11. Key technical decisions (ADR backlog)', '12. Technical risks and mitigations',
-  '13. Why Srivin Platforms', 'Appendix A. Glossary'];
+  '5. Target architecture', '6. Module-by-module technical approach', '7. Cross-cutting quality attributes (NFRs)', '8. Engineering practices and standards', '9. AI-accelerated engineering',
+  '10. Technical plan for the 20 October 2026 launch', '11. Data migration approach', '12. Key technical decisions (ADR backlog)', '13. Technical risks and mitigations',
+  '14. Why Srivin Platforms', 'Appendix A. Glossary'];
 
-const s1 = cover({ title: 'Technical Approach', subtitle: 'How Srivin Platforms will engineer SportSeek Phase 2A: a unified, compliant and scalable sports platform built on what is already live', docId: 'SRV-SPS-2A-TAD-003' });
+const s1 = cover({ title: 'Technical Approach', subtitle: 'How Srivin Platforms will engineer SportSeek Phase 2A: a unified, compliant and scalable sports platform built on what is already live', docId: 'SRV-SPS-2A-TAD-003', ...V });
 
 const s2 = [
   ...contents(toc),
   H1('1. Executive summary'),
   P('SportSeek has something most platforms at this stage do not: a live product with real users, partners and payments. Phase 2A is not a greenfield build. It is a careful re-foundation of a running system. SportSeek must go from "facility booking with separate app accounts" to "one identity, one partner model, one transaction view" without breaking the journeys users rely on today, and while going public on 20 October 2026.'),
   P('Our technical approach is built around that reality:'),
-  ...N(['**Harden, then unify, then extend.** We make the live product safe for public traffic first (Release 2A.0, 20 Oct 2026). We then build the shared foundations every later module depends on, starting with Identity. Only then do we generalise partners, harden bookings, add the Ledger and complete the web application.',
+  ...N(['**Harden, then unify, then extend, one month at a time.** We make the live product safe for public traffic and add two features on day one (R1, 20 Oct 2026). Then two features reach production every month, in dependency order: identity (R2), refunds and the player web app (R3), the generalised partner model (R4), the Ledger and partner web (R5), and payouts and WhatsApp (R6, 23 Mar 2027).',
     '**A .NET modular monolith with hard domain boundaries** on PostgreSQL, extending SportSeek\'s confirmed React Native / .NET / PostgreSQL stack, as the SOW recommends (SOW §6). A small team moves fast in a single deployable, while each domain has its own schema, public interface and events. Any domain can be extracted into a service later without a rewrite.',
     '**Identity designed against the one failure that matters**: duplicate accounts across the User and Partner apps (SOW §7.3). Account linking is verified by OTP ownership proof, existing duplicates are reconciled with rules SportSeek approves, and the linking behaviour is an automated acceptance test.',
     '**Payments stay gateway-native.** The Transaction Ledger is a read model reconciled against Razorpay, and partner payouts use Razorpay Route split settlement, so SportSeek never holds or routes funds (SOW §8.3).',
     '**Configuration, not code, for new partner types.** Service types are data, with schemas an admin can enable (SOW §9.4). Phase 2B\'s expert booking then becomes an extension, not a new system.',
-    '**Engineering quality you can inspect.** Automated tests, security scans, performance tests and observability are built into the pipeline from the first sprint, all inside SportSeek-owned infrastructure.'], 'num'),
-  ...C('The outcome for SportSeek', ['A public launch on 20 October 2026 on a product that has been security-tested, load-tested and instrumented. Phase 2A complete on 4 May 2027 in three accepted releases. A codebase, documentation and SportSeek engineering team able to carry Phase 2B and 2C forward.'], 'key'),
+    '**AI-accelerated, human-owned engineering.** AI coding agents build from approved specifications, generate tests and keep documentation current. Senior engineers review and own every change, and the same automated tests, security scans and performance tests apply to everything (Section 9).'], 'num'),
+  ...C('The outcome for SportSeek', ['A public launch on 20 October 2026 on a security-tested, load-tested and instrumented product, with two new features on day one. Two more features every month after that, and Phase 2A complete on 23 March 2027, delivered by a lean AI-native pod. A codebase, documentation and SportSeek engineering team able to carry Phase 2B and 2C forward.'], 'key'),
 
   H1('2. The problem, technically'),
   P('We read the SOW for the engineering problems underneath the feature list. These six determine whether Phase 2A succeeds:'),
@@ -79,7 +80,7 @@ const s2 = [
     ['Testing', 'xUnit, Testcontainers for .NET (real PostgreSQL in tests), Jest + React Native Testing Library, Detox or Maestro, Playwright, k6 or JMeter', 'The test pyramid in Section 8, running in CI'],
     ['Observability', 'OpenTelemetry for .NET; centralised logging and error tracking; mobile crash reporting', 'Section 7.4']], { size: 16 }),
   H1('6. Module-by-module technical approach'),
-  H2('6.1 Shared Identity & Profile (M2 — Release 2A.1)'),
+  H2('6.1 Shared Identity & Profile (F3 — R2, 24 Nov 2026)'),
   H3('Identity model'),
   ...B(['**Identity**: one record per person; the anchor for everything else.', '**Verified contacts**: phone (normalised to E.164) and email (normalised), each with a verified flag and timestamp; uniqueness enforced on verified values.',
     '**Credentials**: one credential set per identity. A password or credential change applies wherever the person logs in (SOW §7.4).', '**Role assignments**: Player, Event Organiser, Facility Partner, Coach, Physio, Nutritionist and Admin roles held on one identity (SOW §7.2).',
@@ -101,7 +102,7 @@ const s2 = [
     ['Managed identity service from SportSeek\'s cloud provider or a vendor', 'Least operations; mature security features', 'Per-user cost at scale; OTP/phone flows and custom linking logic need checking against the provider\'s limits']], { size: 17 }),
   P('**Recommendation:** given the confirmed .NET stack, our leaning is ASP.NET Core Identity with OpenIddict. It keeps identity in the same codebase, language and deployment as the rest of the platform, and SportSeek\'s .NET developers can own it after KT. The final choice is made in the HLD (ADR-01) after the Phase 1 assessment reviews the current authentication code. Whichever option is chosen, the account-linking logic, role model and KYC reuse sit in SportSeek\'s Identity domain, so the provider stays replaceable.'),
 
-  H2('6.2 Notification Platform (M6 — core in 2A.1, complete in 2A.2)'),
+  H2('6.2 Notification Platform (F1, F2 — R1; F4 — R2; F12 — R6)'),
   ...B(['**Event-driven**: domains publish business events such as booking.confirmed, event.updated, waitlist.slot_opened and refund.processed. The Notification service maps events to catalog entries; domains never call channel providers directly.',
     '**Catalog as configuration**: each trigger defines its recipients (by role), channels, template per channel and language, and priority. It starts from SOW §10 and is extended jointly during LLD (SOW §10.3 ⚑).',
     '**Template management**: versioned templates with preview and test-send from admin tooling. Templates and content are supplied by SportSeek (SOW §10).',
@@ -111,7 +112,7 @@ const s2 = [
     '**Deep links across apps**: a notification that needs an action in the other app uses explicit app-switch handling (open the other app, or its store page if it is not installed), not a shared session (SOW §7.4).',
     '**Scheduled reminders** (T-24h, T-2h, per SOW §10.2) come from a durable scheduler and are cancelled or re-timed automatically when bookings or events change.']),
 
-  H2('6.3 Partner & Service Management — generalised (M5 — Release 2A.2)'),
+  H2('6.3 Partner & Service Management — generalised (F7 — R4; payouts F11 — R6)'),
   ...B(['**Service core**: name, description, pricing, availability, location, verification status, owning partner (SOW §9.4 shared fields).',
     '**Service types as data**: each type (Facility, Coach, Physio, Nutritionist, and future types) has a versioned attribute schema, e.g. amenities for facilities, certifications and session format for coaches. Type-specific attributes are stored as validated structured documents (Postgres JSONB checked against the type\'s schema). Admins enable a type and its schema from the dashboard with no code change (SOW §9.4 acceptance).',
     '**Dynamic onboarding forms** in the Partner App and web are rendered from the type schema, so a new type needs no app release unless it brings a new interaction pattern.',
@@ -120,7 +121,7 @@ const s2 = [
     '**Payout onboarding**: partner KYC and bank fields needed by Razorpay Route are collected at onboarding and passed through to create linked accounts (SOW §8.3). SportSeek relays the data; the gateway runs KYC checks for payouts.',
     '**Ready for 2B**: availability and booking for any service type use the same engine, so the "Expert Booking Experience" is a user-experience layer on this model, not a separate marketplace (SOW §3.2, §9.6).']),
 
-  H2('6.4 Booking, Events & Tournaments hardening (M4 — Release 2A.2)'),
+  H2('6.4 Booking, Events & Tournaments hardening (F5 — R3; F8 — R4)'),
   ...B(['**No double-booking by construction**: slot reservations use database-level overlap protection (a PostgreSQL exclusion constraint on resource and time range) plus short-lived holds during checkout. This does not rely on application checks alone.',
     '**Explicit state machines** for bookings and registrations (held → confirmed → cancelled → refund pending → refunded, etc.). Transitions are validated centrally and every transition emits an event.',
     '**Cancellation & refund**: a policy engine evaluates SportSeek\'s rules (cut-off times, percentages, non-refundable items, who approves) from configuration (D11). Refunds go through the gateway refund API to the original payment method with an idempotency key, so a retry never double-refunds (SOW §8.2).',
@@ -130,7 +131,7 @@ const s2 = [
     '**Import tools**: an offline command-line importer for completed-event data (SOW §9.3) using agreed CSV templates, schema validation, a dry-run report and idempotent re-runs.',
     '**Regression guarantee**: the automated Phase 1 regression suite, built for launch, runs on every change. SOW §9.3 requires "all Phase 1 flows continue to work unchanged".']),
 
-  H2('6.5 Transaction Ledger (M3 — Release 2A.3)'),
+  H2('6.5 Transaction Ledger (F9 — R5; settlement view F11 — R6)'),
   ...B(['**What it is**: a read-side view of payment activity, sourced from gateway records. It is not a wallet: no balances, credits or refund-to-credit (SOW §8).',
     '**Ingestion**: Razorpay webhooks (payment, refund, transfer and settlement events) are verified by signature and processed idempotently. Scheduled reconciliation jobs pull from the gateway\'s APIs and reports to catch anything a webhook missed, so the ledger converges to the gateway within the agreed sync window (SOW §8.2).',
     '**Data model**: one row per gateway transaction, keyed on the gateway reference ID. It links to the SportSeek booking, registration or service reference, the identity and the partner. Amounts are stored as integers in the smallest currency unit to avoid rounding errors.',
@@ -142,7 +143,7 @@ const s2 = [
     '**GST**: SportSeek\'s own commission or convenience fee is modelled as a separate revenue line so it can be invoiced separately from the underlying booking payment.',
     '**DPDP Act**: the ledger and identity data SportSeek stores follows the privacy controls in Section 7.2.'], 'key'),
 
-  H2('6.6 Web Application (Release 2A.3, built from Dec 2026)'),
+  H2('6.6 Web Application (F6 players — R3; F10 organisers & partners — R5)'),
   ...B(['**Scope**: all existing mobile functionality for users, event organisers and venue partners (SOW §3.1), plus each Phase 2A feature as it ships, and the partner settlement view (SOW §8.2).',
     '**One back end**: the web app uses the same APIs through the BFF. There is no duplicated business logic, so mobile and web cannot drift.',
     '**Parity matrix**: every mobile journey is listed with its web equivalent and status. The signed matrix is the acceptance artefact for "web application for all the existing functionality".',
@@ -159,7 +160,7 @@ const s2 = [
     ['Data protection', 'TLS everywhere; encryption at rest for databases, backups and object storage; secrets in a managed secrets store; KYC documents in restricted storage with access logging.'],
     ['Application security', 'Input validation, output encoding, parameterised queries, rate limiting, webhook signature verification, secure file-upload handling.'],
     ['Pipeline security', 'SAST, dependency (SCA) and secret scanning on every merge; DAST on Staging; container/image scanning where containers are used.'],
-    ['Assurance', 'VAPT before each go-live (launch surface for 2A.0; full scope before 2A.3), with no critical or high findings open at release (SOW §14.1).']], { size: 17 }),
+    ['Assurance', 'VAPT before each go-live (launch surface for R1; targeted tests for identity R2, refunds R3 and payouts R6; full scope before Phase 2A completion in R6), with no critical or high findings open at release (SOW §14.1).']], { size: 17 }),
   H2('7.2 Data privacy — DPDP Act'),
   ...B(['**Notice & consent**: clear notices at registration and for optional processing (e.g. marketing and WhatsApp opt-in), with consent recorded and withdrawable.',
     '**Purpose & minimisation**: collect only what each role needs; KYC fields limited to what payouts and verification require.',
@@ -189,10 +190,32 @@ const s2 = [
     ['Mobile release engineering', 'Automated builds and signing; phased store rollouts; crash and performance monitoring; minimum-version enforcement.'],
     ['Documentation', 'HLD, LLD, ADRs, ERDs, runbooks and API docs kept as code next to the system and updated as part of Definition of Done. Architecture diagrams reflect the actual build (SOW §13).']], { size: 17 }),
 
-  H1('9. Technical plan for the 20 October 2026 launch'),
-  P('For launch we deliberately avoid changes to identity, payments or the data model. The engineering work is about making the existing system safe, visible and recoverable under public load.'),
+  H1('9. AI-accelerated engineering'),
+  P('Speed comes from putting AI agents into every engineering step while keeping senior engineers accountable for every outcome. This is how a pod of about 10 people ships two production features a month on a live payments platform.'),
+  H2('9.1 Spec-driven development'),
+  ...N(['**Specify**: the analyst and architect, working with AI, produce a feature spec: user stories, acceptance criteria, API contract (OpenAPI), data changes, UI frames, and security notes for sensitive areas. The PO approves it.',
+    '**Ground**: the repository holds the context the agents need. That means architecture rules, module boundaries, coding conventions, the ADRs, and examples of approved patterns (e.g. how idempotent payment commands are written). Agents follow the codebase\'s standards rather than inventing their own.',
+    '**Generate**: coding agents implement the spec across .NET, PostgreSQL migrations, React Native and React. They generate unit and API tests alongside the code and run the build and tests locally.',
+    '**Review & harden**: a senior engineer reviews the change, fixes design issues and edge cases, and owns the merge. AI provides a first-pass review; security-sensitive code gets a second human reviewer.',
+    '**Verify**: CI runs the full gates: tests, coverage, architecture tests (module boundaries), SAST, dependency and secret scanning. QA extends the AI-generated regression and E2E suites.',
+    '**Document**: API docs, Postman collections, ERDs and runbook sections are regenerated from the code and checked in the same pull request.'], 'num5'),
+  H2('9.2 Where AI makes the biggest difference on this programme'),
+  ...T([['Area', 2.4], ['AI contribution', 4.3], ['Human responsibility', 3.3]], [
+    ['Phase 1 understanding', 'Maps the live .NET / React Native / PostgreSQL code in days: architecture, ERD, API catalogue, risk hotspots', 'Architect validates and decides what to trust'],
+    ['Web application (F6, F10)', 'Ports existing mobile journeys to React/Next.js against the same APIs, reusing design tokens and generating parity checks', 'Web engineer owns UX quality, SEO, accessibility'],
+    ['Regression safety net', 'Generates and extends suites for every live journey, so the monthly train stays safe as scope grows', 'QA curates, removes flaky tests, adds exploratory tests'],
+    ['Identity & data migration (F3)', 'Drafts duplicate-detection queries, merge scripts and reconciliation reports', 'Engineers verify on Testcontainers and Staging; SportSeek approves merge rules'],
+    ['Integrations', 'Scaffolds adapters for Razorpay, SMS, WhatsApp BSP, FCM/APNs and email from provider documentation', 'Engineers validate against sandboxes; webhook security reviewed by the architect'],
+    ['Documentation & KT', 'Keeps HLD/LLD, API docs and runbooks current; answers questions over the codebase', 'Architect reviews; SportSeek signs KT checklist']], { size: 17 }),
+  H2('9.3 Guardrails'),
+  ...B(['Enterprise-terms AI tools only, approved by SportSeek; no training on SportSeek code or data.', 'No production data or secrets in agent context; agents have no production access and cannot deploy.',
+    'Every merge has a named human reviewer who can explain the change; two reviewers for identity, payments, refunds, payouts and KYC.', 'Same quality and security gates for all code, however it was produced; generated dependencies are licence-checked.',
+    'AI assistance is recorded in pull requests and reported monthly (share of AI-assisted changes, review time, rework rate).']),
+  H1('10. Technical plan for the 20 October 2026 launch'),
+  P('For launch we deliberately avoid changes to identity, payments or the data model. The work makes the existing system safe, visible and recoverable under public load, and adds two back-end-led features that carry little risk: **F1 Email notifications** for all live alert triggers and **F2 Booking & event reminders**. AI compresses the work into the 16 available working days. It reads the codebase for the assessment and generates a full regression suite for every live journey in days.'),
   ...T([['Workstream', 2.3], ['Technical actions', 5.2], ['Done when', 2.5]], [
-    ['Stability', 'Triage the defect backlog; fix critical/high issues in launch journeys; add automated regression for those journeys', 'No open S1/S2 in launch scope'],
+    ['Stability', 'AI-assisted triage of the defect backlog; fix critical/high issues in launch journeys; AI-generated regression suite for all live journeys', 'No open S1/S2 in launch scope; suite green'],
+    ['F1 / F2', 'Email channel adapter and templates for existing triggers; reminder scheduler (T-24h, T-2h) with cancellation on booking change', 'Behind flags; enabled after UAT'],
     ['Security', 'SAST, dependency, secret and DAST scans; VAPT of the launch surface; fix critical/high; harden headers, rate limits and OTP abuse controls', 'VAPT retest clean for critical/high'],
     ['Performance', 'Load test the key journeys at SportSeek\'s launch concurrency (D5); tune queries, indexes and scaling settings', 'Targets met with headroom'],
     ['Observability', 'Central logs, error tracking, uptime checks, dashboards and alerting with on-call routing', 'Dashboards and alerts verified in a drill'],
@@ -200,25 +223,25 @@ const s2 = [
     ['Store & privacy', 'Check store policies (privacy labels, permissions, in-app account deletion); publish privacy policy and DPDP notice', 'Submissions accepted or on track'],
     ['Payments sanity', 'End-to-end payment, webhook and failure-path verification against the live gateway configuration', 'Test transactions reconciled']], { size: 17 }),
 
-  H1('10. Data migration approach'),
+  H1('11. Data migration approach'),
   ...T([['Migration', 2.3], ['Approach', 5.4], ['Controls', 2.3]], [
-    ['Identity consolidation (2A.1)', 'Detect duplicates on verified phone/email; apply SportSeek-approved merge rules; re-point bookings, events and partner records; keep a mapping table for audit', 'Dry-runs on Staging; record counts reconciled; rollback script'],
-    ['Facilities → generalised services (2A.2)', 'Create the "Facility" type; migrate records and amenities; dual-read behind a feature flag until verified', 'Full facility regression; zero change in partner experience'],
-    ['Historical events import (2A.3)', 'CSV templates; validation and dry-run reports; idempotent loads (SOW §9.3)', 'Import reports signed off by SportSeek'],
-    ['Ledger back-fill (2A.3)', 'Back-fill historical gateway transactions from gateway APIs and reports', 'Totals reconciled to gateway reports']]),
+    ['Identity consolidation (R3)', 'Detect duplicates on verified phone/email; apply SportSeek-approved merge rules; re-point bookings, events and partner records; keep a mapping table for audit', 'Dry-runs on Staging; record counts reconciled; rollback script'],
+    ['Facilities → generalised services (R4)', 'Create the "Facility" type; migrate records and amenities; dual-read behind a feature flag until verified', 'Full facility regression; zero change in partner experience'],
+    ['Historical events import (R6)', 'CSV templates; validation and dry-run reports; idempotent loads (SOW §9.3)', 'Import reports signed off by SportSeek'],
+    ['Ledger back-fill (R5)', 'Back-fill historical gateway transactions from gateway APIs and reports', 'Totals reconciled to gateway reports']]),
 
-  H1('11. Key technical decisions (ADR backlog)'),
+  H1('12. Key technical decisions (ADR backlog)'),
   P('These decisions are made in the HLD with SportSeek. Each ADR records the context, the options, the decision and its consequences.'),
   ...T([['ADR', 0.8], ['Decision', 2.8], ['Options considered', 3.2], ['Our leaning / criteria', 2.4], ['Decide by', 1.1]], [
-    ['01', 'Identity provider', 'ASP.NET Core Identity + OpenIddict; Keycloak; managed identity service', 'OpenIddict within the .NET estate (subject to assessment)', '06 Nov 2026'],
-    ['02', 'Message broker for event bus', 'Managed queue/stream service in SportSeek\'s cloud vs self-managed', 'Managed service, with a transactional outbox either way', '06 Nov 2026'],
-    ['03', 'Service-type attribute storage', 'PostgreSQL JSONB + JSON Schema; entity-attribute-value; table per type', 'JSONB + schema validation, mapped through EF Core', '06 Nov 2026'],
-    ['04', 'Notification providers', 'Existing SMS; WhatsApp BSP; Email provider; FCM/APNs', 'SportSeek-contracted providers (SOW §15)', '27 Nov 2026'],
-    ['05', 'Web framework', 'React + Next.js; React Native for Web; React SPA', 'React + Next.js (SEO, shared React/TypeScript skills)', '13 Nov 2026'],
-    ['06', 'Feature-flag mechanism', 'Library + config in DB; managed flag service', 'Simple and auditable; SportSeek-owned', '13 Nov 2026'],
-    ['07', 'API versioning & min-version policy', 'URI vs header versioning; forced vs soft upgrade', 'Explicit versions; minimum-version check at app start', '13 Nov 2026']], { size: 17 }),
+    ['01', 'Identity provider', 'ASP.NET Core Identity + OpenIddict; Keycloak; managed identity service', 'OpenIddict within the .NET estate (subject to assessment)', '23 Oct 2026'],
+    ['02', 'Message broker for event bus', 'Managed queue/stream service in SportSeek\'s cloud vs self-managed', 'Managed service, with a transactional outbox either way', '23 Oct 2026'],
+    ['03', 'Service-type attribute storage', 'PostgreSQL JSONB + JSON Schema; entity-attribute-value; table per type', 'JSONB + schema validation, mapped through EF Core', '23 Oct 2026'],
+    ['04', 'Notification providers', 'Existing SMS; WhatsApp BSP; Email provider; FCM/APNs', 'SportSeek-contracted providers (SOW §15)', '23 Oct 2026'],
+    ['05', 'Web framework', 'React + Next.js; React Native for Web; React SPA', 'React + Next.js (SEO, shared React/TypeScript skills)', '23 Oct 2026'],
+    ['06', 'Feature-flag mechanism', 'Library + config in DB; managed flag service', 'Simple and auditable; SportSeek-owned', '23 Oct 2026'],
+    ['07', 'API versioning & min-version policy', 'URI vs header versioning; forced vs soft upgrade', 'Explicit versions; minimum-version check at app start', '23 Oct 2026']], { size: 17 }),
 
-  H1('12. Technical risks and mitigations'),
+  H1('13. Technical risks and mitigations'),
   ...T([['Risk', 3.4], ['Mitigation', 6.6]], [
     ['Phase 1 code quality, or .NET / React Native versions near end of support', 'Assessment first; upgrade needs raised as ADRs with evidence; framework upgrades scheduled outside launch freeze; change control if scope shifts'],
     ['Duplicate identities and ambiguous merges', 'OTP-verified linking; approved merge rules; staged dry-runs; audit mapping table'],
@@ -227,15 +250,16 @@ const s2 = [
     ['Notification template approvals (DLT, WhatsApp) delay go-live', 'Submit templates early (D12, D13); channel fallback; flag-controlled enablement'],
     ['Old mobile clients break on new APIs', 'Versioned APIs; compatibility tests; minimum-version enforcement']]),
 
-  H1('13. Why Srivin Platforms'),
-  P('SportSeek needs a partner that can do three things at once: launch safely in weeks, re-foundation a live platform over months, and leave SportSeek stronger and more independent at the end. This approach is built for exactly that combination:'),
+  H1('14. Why Srivin Platforms'),
+  P('SportSeek needs a partner that can do four things at once: launch safely in weeks, ship new value every month, re-foundation a live platform without breaking it, and leave SportSeek stronger and more independent at the end. This approach is built for exactly that combination:'),
   ...T([['What SportSeek needs', 3.4], ['What Srivin brings in this proposal', 6.6]], [
     ['A public launch on 20 Oct 2026 that does not backfire', 'A launch plan with a Scope Gate, code freeze, VAPT, load test, rehearsed rollback and a Go/No-Go that SportSeek controls. Honest about what fits the date.'],
     ['Identity unified without duplicates or takeovers', 'An account-linking design with ownership proof, reconciliation of existing data, and an automated acceptance test. It goes beyond the SOW\'s requirement to detect matches.'],
     ['Payments that stay compliance-light', 'Gateway-native ledger with reconciliation, Route split settlement as a hard constraint, PCI scope kept minimal, and separate modelling of SportSeek\'s own fee revenue.'],
     ['A platform that grows into 2B/2C', 'A service-type model that makes expert booking an extension; a domain-event taxonomy that feeds analytics; a modular monolith with extraction paths.'],
     ['Ownership and independence', 'Everything in SportSeek\'s accounts; embedded SportSeek developers; KT every milestone with shadow and reverse-shadow; documentation as code.'],
-    ['Predictability', 'A dated plan with explicit dependencies and critical path, stage gates and weekly transparency (see the WBS & Integrated Project Plan and the Project Delivery Model).']]),
+    ['Faster go-to-market', 'An AI-native pod that ships two features to production every month from launch day, and completes Phase 2A on 23 Mar 2027 with less than half the effort of a conventional team.'],
+    ['Predictability', 'Fixed monthly release dates, dated dependencies, and weekly working software (see the WBS & Integrated Project Plan and the Project Delivery Model).']]),
   ...C('Srivin credentials — to be completed by Srivin Platforms before issue', ['[Insert relevant case studies, platform references, team profiles of named key personnel and any certifications. Only verified, client-approved references should be included.]'], 'note'),
 
   H1('Appendix A. Glossary'),

@@ -9,22 +9,20 @@ Prepared by Srivin Platforms for RacingAhead / SportSeek (v1.0, 27 Sep 2026). Ba
 | 02 | Project Delivery Model: lifecycle, agile cadence, governance, quality, release, change, risk, KT, support | `02_Project_Delivery_Model.docx` / `.pdf` |
 | 03 | Technical Approach: architecture, per-module design, NFRs, engineering practices, launch plan | `03_Technical_Approach.docx` / `.pdf` |
 
-## Technology stack
+## Delivery model (v2.0): AI-native release train
 
-React Native (mobile apps), .NET / ASP.NET Core (back end), PostgreSQL (database); React + Next.js proposed for the new web application.
+A lean, senior AI-native pod (about 10-11 FTE, 67.25 person-months) ships **2 features to production every month** from the public launch. Phase 2A is complete on **23 Mar 2027**.
 
-## Resource loading (Srivin, indicative)
-
-Peak about 24.5 FTE (Jan 2027); 154 person-months from Oct 2026 to Jun 2027. The source data is `source/res.py` -> `res.json`.
-
-## Key dates (Baseline 0)
-
-| Release | Scope | Go-live |
+| Release | Go-live | Features |
 |---|---|---|
-| 2A.0 Public Launch | Hardened, security- and load-tested Phase 1 | **Tue 20 Oct 2026** |
-| 2A.1 | M2 Shared Identity + M6 Notification core | Wed 27 Jan 2027 |
-| 2A.2 | M5 Partner/Service + M4 Booking hardening + M6 complete | Tue 16 Mar 2027 |
-| 2A.3 | M3 Transaction Ledger + Web application — Phase 2A complete | Tue 4 May 2027 |
+| R1 | **Tue 20 Oct 2026** | Public launch + F1 Email notifications + F2 Booking & event reminders |
+| R2 | Tue 24 Nov 2026 | F3 Shared identity & account linking + F4 Push & preferences |
+| R3 | Tue 22 Dec 2026 | F5 Cancellation & refunds + F6 Web app (players) |
+| R4 | Wed 27 Jan 2027 | F7 Generalised partner model + F8 Waitlist & edit alerts |
+| R5 | Tue 23 Feb 2027 | F9 Transaction Ledger + F10 Web app (organisers & partners) |
+| R6 | Tue 23 Mar 2027 | F11 Split settlement & payouts + F12 WhatsApp & full alert catalog. **Phase 2A complete** |
+
+Stack: React Native (mobile), .NET / ASP.NET Core (back end), PostgreSQL; React + Next.js proposed for web.
 
 ## Regenerating
 

@@ -5,7 +5,7 @@ from matplotlib.patches import FancyBboxPatch
 plt.rcParams.update({'font.family':'DejaVu Sans','font.size':8.5,'axes.edgecolor':'#bdbcb6'})
 d=json.load(open('plan.json')); R={r['id']:r for r in d['rows']}
 C={'launch':'#eb6834','design':'#4a3aa7','identity':'#2a78d6','notif':'#1baf7a','partner':'#eda100','booking':'#e87ba4','ledger':'#008300','web':'#e34948','release':'#8a8984','pm':'#8a8984'}
-LBL={'launch':'Release 2A.0 launch','design':'Discovery & design','identity':'Foundation & identity','notif':'Notifications','partner':'Partner & service','booking':'Booking & events','ledger':'Transaction ledger','web':'Web application','release':'Release, KT & warranty'}
+LBL={'launch':'R1 launch','design':'Discovery & design','identity':'Foundation & identity','notif':'Notifications','partner':'Partner & service','booking':'Booking & events','ledger':'Transaction ledger','web':'Web application','release':'Release, KT & warranty'}
 P=lambda s: dt.datetime.strptime(s,'%Y-%m-%d')
 def gantt(ids,fn,title,xmin,xmax,major,fmt,h=None,mlabels=True):
     rows=[R[i] for i in ids]; n=len(rows)
@@ -36,10 +36,33 @@ def gantt(ids,fn,title,xmin,xmax,major,fmt,h=None,mlabels=True):
     ax.set_title(title,loc='left',fontsize=10.5,fontweight='bold',color='#0b0b0b',pad=18)
     plt.tight_layout(); plt.savefig(fn,facecolor='white'); plt.close()
 
-launch=['2.1','2.2','2.3','2.4','2.5','2.6','2.7','2.8','2.9','2.10','2.11','2.12','2.13','2.14','2.15','2.16','3.1','3.4']
-gantt(launch,'gantt_launch.png','Release 2A.0 — day-level plan to the 20 October 2026 public launch',dt.datetime(2026,9,28),dt.datetime(2026,11,15),md.WeekdayLocator(byweekday=md.MO),'%d %b')
-road=['2.14','2.15','3.2','3.4','3.5','3.6','3.7','3.8','3.10','4.1','4.4','4.6','5.1','5.3','5.7','5.9','9.4','6.1','6.6','6.7','7.1','7.4','7.6','7.8','8.2','8.4','8.6','10.4','11.1','11.2','11.4','11.7','12.1','12.2','12.3','12.4','12.5','12.7','13.1','13.2','13.4','13.6','13.9']
-gantt(road,'gantt_roadmap.png','Phase 2A integrated roadmap — Sep 2026 to Jun 2027',dt.datetime(2026,9,21),dt.datetime(2027,6,10),md.MonthLocator(),'%b %y')
+launch=['2.1','2.2','2.3','2.4','2.5','2.6','2.7','2.8','2.9','2.10','2.11','2.12','2.13','2.14','2.15','2.16','2.17','3.1','3.2','3.3','3.5']
+gantt(launch,'gantt_launch.png','Release R1 — day-level plan to the 20 October 2026 public launch (with F1, F2)',dt.datetime(2026,9,28),dt.datetime(2026,11,9),md.WeekdayLocator(byweekday=md.MO),'%d %b')
+road=['2.16','2.17','3.2','3.3','3.4','3.5','3.7','4.1','4.3','4.4','5.1','5.2','5.3','5.4','6.1','6.2','6.3','6.4','6.5','7.1','7.2','7.3','7.4','8.1','8.2','8.3','8.4','9.1','9.2','9.3','9.4','9.5','9.7','9.9']
+gantt(road,'gantt_roadmap.png','Phase 2A monthly release train — Oct 2026 to Apr 2027',dt.datetime(2026,9,28),dt.datetime(2027,4,12),md.MonthLocator(),'%b %y')
+
+# Release train figure
+fig,ax=plt.subplots(figsize=(11.5,3.9),dpi=200); ax.set_xlim(0,120); ax.set_ylim(0,40); ax.axis('off')
+rel=[('R1','20 Oct 2026','Public launch','F1 Email notifications','F2 Booking & event reminders','#eb6834'),
+     ('R2','24 Nov 2026','','F3 Shared identity & account linking','F4 Push notifications & preferences','#2a78d6'),
+     ('R3','22 Dec 2026','','F5 Cancellation & refunds','F6 Web app — players','#e87ba4'),
+     ('R4','27 Jan 2027','','F7 Partner model: coach, physio, nutritionist','F8 Waitlist & edit alerts','#eda100'),
+     ('R5','23 Feb 2027','','F9 Transaction Ledger','F10 Web app — organisers & partners','#008300'),
+     ('R6','23 Mar 2027','Phase 2A complete','F11 Split settlement & partner payouts','F12 WhatsApp & full alert catalog','#4a3aa7')]
+ax.plot([2,118],[30,30],color='#bdbcb6',lw=2,zorder=1)
+for i,(r,d,tag,f1,f2,c) in enumerate(rel):
+    x=2+i*19.6
+    ax.scatter([x+8.6],[30],s=160,color=c,zorder=3,edgecolors='white',linewidths=1.5)
+    ax.text(x+8.6,35.6,r,ha='center',fontsize=11,fontweight='bold',color='#0b0b0b')
+    ax.text(x+8.6,33,d,ha='center',fontsize=8,color='#52514e')
+    ax.add_patch(FancyBboxPatch((x,6),17.2,19,boxstyle='round,pad=0.3,rounding_size=1.2',fc='white',ec=c,lw=1.4))
+    ax.add_patch(FancyBboxPatch((x,22.2),17.2,2.8,boxstyle='square,pad=0',fc=c,ec=c))
+    ax.text(x+8.6,23.6,tag or 'Monthly release',ha='center',va='center',fontsize=7.2,color='white',fontweight='bold')
+    import textwrap
+    ax.text(x+1,19.5,'\n'.join(textwrap.wrap(f1,21)),fontsize=7.4,va='top',color='#0b0b0b')
+    ax.text(x+1,12.2,'\n'.join(textwrap.wrap(f2,21)),fontsize=7.4,va='top',color='#0b0b0b')
+ax.text(2,1.5,'Fixed dates, flexible scope: a feature that is not release-ready rides the next train behind a feature flag. It never delays the train.',fontsize=7.8,color='#52514e')
+plt.savefig('release_train.png',bbox_inches='tight',facecolor='white'); plt.close()
 
 # Architecture diagram
 fig,ax=plt.subplots(figsize=(11,7.2),dpi=200); ax.set_xlim(0,110); ax.set_ylim(0,72); ax.axis('off')
@@ -77,13 +100,13 @@ plt.savefig('architecture.png',bbox_inches='tight',facecolor='white'); plt.close
 
 # Critical path flow
 fig,ax=plt.subplots(figsize=(12,2.6),dpi=200); ax.set_xlim(0,110); ax.set_ylim(0,26); ax.axis('off')
-cp=[('Contract &\naccess\n29 Sep','#8a8984'),('Discovery &\nHLD sign-off\n13 Nov','#4a3aa7'),('Design system\napproval\n20 Nov','#4a3aa7'),('Web shell &\nuser journeys\n30 Nov–22 Jan','#e34948'),('Organiser &\npartner web\n11 Jan–19 Mar','#e34948'),('Web parity &\ntesting\n8 Mar–2 Apr','#e34948'),('2A.3 SIT/\nperf/VAPT\n5–16 Apr','#8a8984'),('UAT\n19–30 Apr','#8a8984'),('Go-live\n4 May 2027','#0b0b0b')]
+cp=[('Access &\nAI approval\n29 Sep','#8a8984'),('R1 launch\n20 Oct','#eb6834'),('HLD & design\nsign-off\n23 Oct','#4a3aa7'),('R2 Identity\n24 Nov','#2a78d6'),('R3 Refunds\n+ Web v1\n22 Dec','#e87ba4'),('R4 Partner\nmodel\n27 Jan','#eda100'),('R5 Ledger\n+ Web v2\n23 Feb','#008300'),('R6 Route +\nWhatsApp\n23 Mar','#4a3aa7'),('Phase 2A\naccepted\n2 Apr 2027','#0b0b0b')]
 w=11.3
 for i,(t,c) in enumerate(cp):
     x=0.5+i*12.25
     ax.add_patch(FancyBboxPatch((x,8),w,11,boxstyle='round,pad=0.2,rounding_size=1.2',fc=c,ec='white'))
     ax.text(x+w/2,13.5,t,ha='center',va='center',fontsize=6.9,color='white',fontweight='bold')
     if i: ax.annotate('',xy=(x-0.2,13.5),xytext=(x-1.7,13.5),arrowprops=dict(arrowstyle='->',color='#0b0b0b',lw=1))
-ax.text(1,2.2,'Near-critical chain (about 10 working days of float): M2 Identity (to 8 Jan) → M5 Partner/Service + Razorpay Route onboarding (to 19 Feb) → M3 Ledger (to 19 Mar) → 2A.3 SIT.\nExternal gates on that chain: D10 Route confirmation (6 Nov), D18 account-merge rules (11 Dec).',fontsize=7.4,color='#52514e')
+ax.text(1,2.2,'Each release builds on the one before: identity → refunds → partner model → ledger → payouts. External gates on the path: D21 AI approval (29 Sep), D11 refund policy (13 Nov),\nD18 merge rules (20 Nov), D10 Route confirmation (6 Nov), D13 WhatsApp templates (5 Feb).',fontsize=7.4,color='#52514e')
 plt.savefig('critical_path.png',bbox_inches='tight',facecolor='white'); plt.close()
 print('done')

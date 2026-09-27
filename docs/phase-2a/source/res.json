@@ -6,298 +6,14 @@
   "Jan 27",
   "Feb 27",
   "Mar 27",
-  "Apr 27",
-  "May 27",
-  "Jun 27"
+  "Apr 27"
  ],
  "roles": [
   {
    "group": "mgmt",
-   "role": "Delivery Manager / TPM",
+   "role": "Delivery Lead / TPM (AI-native delivery)",
    "seniority": "Senior (12+ yrs)",
    "load": [
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0.25
-   ],
-   "skills": "Hybrid agile delivery of multi-squad programmes; integrated planning, critical-path and dependency management; RAID; stakeholder and steering management; change control; release governance",
-   "tools": "JIRA / Trello, MS Project or equivalent, Confluence-style wiki",
-   "pm": 8.25,
-   "peak": 1
-  },
-  {
-   "group": "mgmt",
-   "role": "Scrum Master",
-   "seniority": "Mid\u2013Senior (6+ yrs)",
-   "load": [
-    0,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0.5,
-    0
-   ],
-   "skills": "Scrum facilitation across 4 squads; sprint metrics (velocity, burndown, predictability); impediment removal; scrum-of-scrums",
-   "tools": "JIRA / Trello boards and reports",
-   "pm": 6.5,
-   "peak": 1
-  },
-  {
-   "group": "mgmt",
-   "role": "Solution Architect (.NET / PostgreSQL)",
-   "seniority": "Senior (12+ yrs)",
-   "load": [
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0.75,
-    0.5,
-    0
-   ],
-   "skills": "ASP.NET Core modular-monolith and domain-driven design; PostgreSQL data architecture; OAuth2 / OIDC identity design; event-driven integration (transactional outbox, message brokers); payment-gateway architecture incl. Razorpay Route split settlement; React Native client architecture; OWASP ASVS; DPDP-aligned data design",
-   "tools": "C4 / architecture diagrams, ADRs, SportSeek cloud platform services",
-   "pm": 7.25,
-   "peak": 1
-  },
-  {
-   "group": "design",
-   "role": "Business Analyst",
-   "seniority": "Mid\u2013Senior (6+ yrs)",
-   "load": [
-    2,
-    2,
-    2,
-    2,
-    1.5,
-    1.5,
-    1,
-    0.5,
-    0
-   ],
-   "skills": "Requirement workshops; user stories with Given/When/Then acceptance criteria; booking, events, payments/refunds and partner-onboarding domains; process and state modelling; SOW traceability; UAT scenario design",
-   "tools": "JIRA / Trello, BPMN / flow diagrams",
-   "pm": 12.5,
-   "peak": 2
-  },
-  {
-   "group": "design",
-   "role": "UX / UI Designer",
-   "seniority": "Mid\u2013Senior (5+ yrs)",
-   "load": [
-    1.5,
-    2,
-    2,
-    2,
-    1,
-    1,
-    0.5,
-    0,
-    0
-   ],
-   "skills": "Atomic design systems (tokens \u2192 atoms \u2192 templates); mobile (iOS/Android) and responsive web UI; usability research and testing; accessibility (WCAG 2.1 AA); prototyping; developer hand-off",
-   "tools": "Figma or tool agreed with SportSeek",
-   "pm": 10.0,
-   "peak": 2
-  },
-  {
-   "group": "backend",
-   "role": ".NET Tech Lead",
-   "seniority": "Senior (10+ yrs)",
-   "load": [
-    1,
-    2,
-    2,
-    2,
-    2,
-    2,
-    1,
-    1,
-    0
-   ],
-   "skills": "C# / ASP.NET Core Web API; EF Core with Npgsql; modular boundaries and architecture tests; OIDC server/client implementation (e.g. OpenIddict or ASP.NET Core Identity); background jobs and scheduling; idempotency and webhook handling; code review and mentoring",
-   "tools": "xUnit, Testcontainers for .NET, NetArchTest / ArchUnitNET, OpenAPI tooling",
-   "pm": 13,
-   "peak": 2
-  },
-  {
-   "group": "backend",
-   "role": ".NET Backend Engineer",
-   "seniority": "Mid (4\u20138 yrs)",
-   "load": [
-    2,
-    4,
-    4,
-    4,
-    4,
-    3,
-    2,
-    1,
-    0
-   ],
-   "skills": "C# / ASP.NET Core; EF Core + Npgsql; LINQ and SQL; REST APIs with OpenAPI; integration with Razorpay (payments, refunds, Route, webhooks), SMS, WhatsApp BSP, FCM/APNs and email; messaging consumers; unit and integration testing",
-   "tools": "xUnit, Testcontainers, Postman",
-   "pm": 24,
-   "peak": 4
-  },
-  {
-   "group": "backend",
-   "role": "PostgreSQL Database Engineer",
-   "seniority": "Senior (8+ yrs)",
-   "load": [
-    0.5,
-    0.5,
-    1,
-    1,
-    0.5,
-    0.5,
-    0.5,
-    0.25,
-    0
-   ],
-   "skills": "Schema-per-domain design; EF Core migrations with expand/contract; JSONB with schema validation; exclusion constraints (btree_gist) for double-booking prevention; geospatial radius queries; indexing and query tuning (EXPLAIN ANALYZE); backup / point-in-time recovery; identity de-duplication and data-migration scripts; reconciliation SQL",
-   "tools": "psql, pg_stat_statements, PostGIS where used",
-   "pm": 4.75,
-   "peak": 1
-  },
-  {
-   "group": "mobile",
-   "role": "React Native Lead",
-   "seniority": "Senior (8+ yrs)",
-   "load": [
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0.5,
-    0.5,
-    0
-   ],
-   "skills": "React Native with TypeScript for iOS and Android; navigation, state and API layers; native modules; OIDC with PKCE on mobile (e.g. react-native-app-auth); push notifications (FCM/APNs, e.g. React Native Firebase); deep links / universal links and app-switch handling; minimum-version enforcement; store release management",
-   "tools": "Fastlane, Xcode, Android Studio, crash and performance monitoring",
-   "pm": 7.0,
-   "peak": 1
-  },
-  {
-   "group": "mobile",
-   "role": "React Native Engineer",
-   "seniority": "Mid (4\u20137 yrs)",
-   "load": [
-    1,
-    1,
-    2,
-    2,
-    2,
-    1,
-    1,
-    0.5,
-    0
-   ],
-   "skills": "React Native + TypeScript; REST integration; schema-driven dynamic forms (partner onboarding); offline/error states; accessibility; unit and component testing; device/OS compatibility fixes",
-   "tools": "Jest, React Native Testing Library, Detox or Maestro",
-   "pm": 10.5,
-   "peak": 2
-  },
-  {
-   "group": "web",
-   "role": "Web Front-end Lead (React)",
-   "seniority": "Senior (8+ yrs)",
-   "load": [
-    0,
-    0.5,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0.5,
-    0
-   ],
-   "skills": "React + TypeScript; Next.js server rendering for SEO-relevant public pages; shared design tokens / component library with the React Native apps; OIDC for web clients; performance (Core Web Vitals); WCAG 2.1 AA",
-   "tools": "Next.js, Storybook, Playwright",
-   "pm": 6.0,
-   "peak": 1
-  },
-  {
-   "group": "web",
-   "role": "Web Front-end Engineer (React)",
-   "seniority": "Mid (3\u20136 yrs)",
-   "load": [
-    0,
-    0,
-    2,
-    2,
-    2,
-    2,
-    1,
-    0.5,
-    0
-   ],
-   "skills": "React + TypeScript; responsive layouts; forms and validation; API integration; admin and partner web screens incl. ledger tables, filters, sorting and exports",
-   "tools": "Next.js, Playwright, Jest",
-   "pm": 9.5,
-   "peak": 2
-  },
-  {
-   "group": "qa",
-   "role": "QA Lead (Automation)",
-   "seniority": "Senior (8+ yrs)",
-   "load": [
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0.25
-   ],
-   "skills": "Test strategy and quality gates; automation architecture for API, React Native and web; CI integration; SIT and regression planning; defect governance; UAT support",
-   "tools": "Playwright, Detox / Maestro / Appium, Postman / Newman, xUnit",
-   "pm": 8.25,
-   "peak": 1
-  },
-  {
-   "group": "qa",
-   "role": "QA Engineer",
-   "seniority": "Mid (3\u20136 yrs)",
-   "load": [
-    1.5,
-    1,
-    2,
-    2,
-    2,
-    2,
-    2,
-    1,
-    0
-   ],
-   "skills": "Functional and regression testing on iOS, Android and web; API testing; payment, refund, waitlist and notification test scenarios using Razorpay test mode; test-data management; automated test authoring",
-   "tools": "Postman, Playwright, device farm / physical devices",
-   "pm": 13.5,
-   "peak": 2
-  },
-  {
-   "group": "ops",
-   "role": "DevOps / SRE Engineer",
-   "seniority": "Senior (7+ yrs)",
-   "load": [
-    1,
-    1.5,
     1,
     1,
     1,
@@ -306,49 +22,207 @@
     1,
     0.5
    ],
-   "skills": "Infrastructure as code in SportSeek's cloud; CI/CD for .NET services and React Native builds; managed PostgreSQL operations; containers; observability (OpenTelemetry for .NET, logs, metrics, alerting); secrets management; backup/restore drills; release automation and on-call",
-   "tools": "Terraform or cloud-native IaC, SportSeek's CI platform, Fastlane",
-   "pm": 9.0,
-   "peak": 1.5
+   "skills": "Release-train planning and dependency management; stakeholder and steering management; RAID and change control; metrics-driven delivery; governance of AI usage (policy, audit trail, data handling)",
+   "tools": "AI-generated status reports, RAID and dependency tracking from JIRA/Trello and repository data; JIRA / Trello",
+   "pm": 6.5,
+   "peak": 1
   },
   {
-   "group": "spec",
-   "role": "Security Engineer (VAPT)",
-   "seniority": "Senior (8+ yrs)",
+   "group": "mgmt",
+   "role": "Solution Architect & AI Engineering Lead",
+   "seniority": "Senior (12+ yrs)",
    "load": [
-    0.5,
-    0.25,
-    0,
-    0.25,
-    0.25,
-    0.25,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.25
+   ],
+   "skills": "ASP.NET Core modular monolith and domain design; PostgreSQL architecture; OAuth2/OIDC; event-driven integration; Razorpay incl. Route; React Native and React architecture; OWASP ASVS. Owns the AI engineering playbook: specs, prompt/context standards, agent guardrails and review rules",
+   "tools": "AI coding agents (e.g. Claude Code) for codebase analysis, spike prototypes and ADR drafting; C4 diagrams",
+   "pm": 6.25,
+   "peak": 1
+  },
+  {
+   "group": "design",
+   "role": "Product Analyst (AI-assisted BA)",
+   "seniority": "Mid\u2013Senior (6+ yrs)",
+   "load": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.25
+   ],
+   "skills": "Story mapping; Given/When/Then acceptance criteria; booking, payments/refunds and partner domains; SOW traceability; UAT scenario design",
+   "tools": "AI drafts stories, acceptance criteria, edge cases and UAT scripts from the SOW and specs; analyst and PO refine",
+   "pm": 6.25,
+   "peak": 1
+  },
+  {
+   "group": "design",
+   "role": "Product Designer (UX/UI)",
+   "seniority": "Mid\u2013Senior (6+ yrs)",
+   "load": [
+    1,
+    1,
+    1,
+    1,
     0.5,
     0.25,
     0
    ],
-   "skills": "Web, API and mobile penetration testing (OWASP WSTG, MASTG); SAST/DAST/SCA tool set-up and triage; secure .NET and React Native review; remediation verification",
-   "tools": "SAST / DAST / SCA tooling, Burp Suite or equivalent",
-   "pm": 2.25,
+   "skills": "Atomic design system; mobile and responsive web UI; usability testing; accessibility (WCAG 2.1 AA); design tokens shared by React Native and React",
+   "tools": "AI-assisted layout and copy exploration and design-to-code token export; Figma or agreed tool",
+   "pm": 4.75,
+   "peak": 1
+  },
+  {
+   "group": "backend",
+   "role": "Senior .NET Engineer (AI-augmented)",
+   "seniority": "Senior (8+ yrs)",
+   "load": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    0.5
+   ],
+   "skills": "C# / ASP.NET Core; EF Core with Npgsql; OIDC implementation (e.g. OpenIddict); Razorpay payments, refunds, Route and webhooks; notification channel integrations; idempotent APIs; background processing",
+   "tools": "Spec-driven development with AI coding agents: agents generate code and tests from the approved spec, engineers review, harden and own every merge",
+   "pm": 12.5,
+   "peak": 2
+  },
+  {
+   "group": "backend",
+   "role": ".NET & PostgreSQL Engineer (AI-augmented)",
+   "seniority": "Senior (8+ yrs)",
+   "load": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0
+   ],
+   "skills": "Schema-per-domain design; EF Core migrations (expand/contract); JSONB with schema validation; exclusion constraints against double-booking; geospatial queries; query tuning; identity de-duplication and data-migration scripts; reconciliation SQL",
+   "tools": "AI-generated migration and reconciliation scripts, verified against Testcontainers PostgreSQL before any environment",
+   "pm": 6,
+   "peak": 1
+  },
+  {
+   "group": "mobile",
+   "role": "Senior React Native Engineer (AI-augmented)",
+   "seniority": "Senior (7+ yrs)",
+   "load": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.25
+   ],
+   "skills": "React Native + TypeScript on iOS/Android; OIDC with PKCE; push (FCM/APNs); deep links and app-switch handling; schema-driven forms; store release engineering with Fastlane; minimum-version enforcement",
+   "tools": "AI agents generate screens from design tokens and specs, and component and E2E tests; engineer reviews and tunes on real devices",
+   "pm": 6.25,
+   "peak": 1
+  },
+  {
+   "group": "web",
+   "role": "Senior React / Next.js Engineer (AI-augmented)",
+   "seniority": "Senior (7+ yrs)",
+   "load": [
+    0,
+    1,
+    1,
+    1,
+    1,
+    0.5,
+    0
+   ],
+   "skills": "React + TypeScript with Next.js; server rendering for SEO; shared design tokens; data-heavy admin screens (ledger tables, filters, exports); WCAG 2.1 AA",
+   "tools": "AI agents port Phase 1 mobile journeys to web against the shared API; parity checks generated from the mobile journey inventory",
+   "pm": 4.5,
+   "peak": 1
+  },
+  {
+   "group": "qa",
+   "role": "QA Automation Engineer (AI-assisted)",
+   "seniority": "Mid\u2013Senior (6+ yrs)",
+   "load": [
+    2,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.25
+   ],
+   "skills": "Test strategy and quality gates; API, mobile and web automation; payment/refund scenarios in Razorpay test mode; UAT support",
+   "tools": "AI generates API tests from OpenAPI specs, regression suites from user journeys, and test data; engineer curates and maintains the suite",
+   "pm": 7.25,
+   "peak": 2
+  },
+  {
+   "group": "ops",
+   "role": "DevOps / SRE Engineer",
+   "seniority": "Senior (7+ yrs)",
+   "load": [
+    1,
+    1,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.25
+   ],
+   "skills": "Infrastructure as code in SportSeek's cloud; CI/CD for .NET and React Native; managed PostgreSQL; OpenTelemetry observability; secrets; release automation; on-call",
+   "tools": "AI-assisted IaC authoring, pipeline configuration and log/incident triage",
+   "pm": 4.25,
+   "peak": 1
+  },
+  {
+   "group": "spec",
+   "role": "Security Engineer (VAPT, on demand)",
+   "seniority": "Senior (8+ yrs)",
+   "load": [
+    0.5,
+    0.25,
+    0.25,
+    0,
+    0.25,
+    0.5,
+    0
+   ],
+   "skills": "Web, API and mobile penetration testing (OWASP WSTG, MASTG); targeted pen tests on identity (R2), refunds (R3) and payouts (R6); full VAPT before Phase 2A completion",
+   "tools": "AI-assisted SAST triage and threat-model drafting; manual testing by the specialist",
+   "pm": 1.75,
    "peak": 0.5
   },
   {
    "group": "spec",
-   "role": "Performance Engineer",
+   "role": "Performance Engineer (on demand)",
    "seniority": "Mid\u2013Senior (6+ yrs)",
    "load": [
     0.5,
     0,
     0,
-    0.25,
-    0.25,
-    0.25,
-    0.5,
     0,
+    0.25,
+    0.25,
     0
    ],
-   "skills": "Load and stress test design; .NET API profiling; PostgreSQL query and connection-pool analysis; capacity recommendations",
-   "tools": "k6 or JMeter, dotnet-counters / dotnet-trace",
-   "pm": 1.75,
+   "skills": "Load test design; .NET API profiling; PostgreSQL query analysis; capacity recommendations",
+   "tools": "AI-generated k6 scripts from the API catalogue; engineer designs workload models",
+   "pm": 1.0,
    "peak": 0.5
   }
  ],
@@ -363,15 +237,13 @@
   "spec": "Specialists"
  },
  "total": [
-  15.5,
-  19.75,
-  24,
-  24.5,
-  22.5,
-  20.5,
-  16.25,
+  12.0,
+  11.25,
+  10.75,
+  10.5,
+  10.5,
   10.0,
-  1.0
+  2.25
  ],
- "pm": 154.0
+ "pm": 67.25
 }

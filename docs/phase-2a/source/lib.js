@@ -76,8 +76,8 @@ function cover(o) {
   const L = (t, s, c, b, a = 80) => new Paragraph({ children: [new TextRun({ text: t, size: s, color: c, bold: b, font: FONT })], spacing: { after: a } });
   const tb = T([['Document control', 3], ['', 7]], [
       ['Document', o.docId], ['Programme', 'SportSeek Phase 2 — Phase 2A (Harden & Unify)'], ['Client', 'RacingAhead / SportSeek, Hyderabad'],
-      ['Prepared by', 'Srivin Platforms — Technical Programme Management Office'], ['Version / date', 'v1.0 — 27 September 2026'],
-      ['Status', 'Issued for client review'], ['Reference baseline', 'SportSeek Phase 2 SOW v1.0 (15 Jul 2026); SportsSeek App High Level Requirements'],
+      ['Prepared by', 'Srivin Platforms — Technical Programme Management Office'], ['Version / date', `${o.version || 'v1.0'} — 27 September 2026`],
+      ['Status', o.status || 'Issued for client review'], ['Reference baseline', 'SportSeek Phase 2 SOW v1.0 (15 Jul 2026); SportsSeek App High Level Requirements'],
       ['Classification', 'Confidential — RacingAhead / SportSeek and Srivin Platforms only']], { zebra: true, boldFirst: true, size: 18 });
   const first = tag(new Paragraph({ children: [new TextRun({ text: 'SRIVIN PLATFORMS', bold: true, size: 30, color: NAVY, font: FONT, characterSpacing: 60 })], spacing: { after: 40 },
       border: { bottom: { style: BorderStyle.SINGLE, size: 18, color: TEAL, space: 6 } } }),
