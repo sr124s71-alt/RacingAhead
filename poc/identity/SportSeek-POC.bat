@@ -10,7 +10,7 @@ rem    3. asks for your PostgreSQL user and password once, and remembers them fo
 rem    4. runs start-all.bat from the downloaded copy
 rem
 rem    SportSeek-POC.bat            update and start
-rem    SportSeek-POC.bat /config    enter your PostgreSQL details again, then start
+rem    SportSeek-POC.bat /config    stop, enter your PostgreSQL details again, then start
 rem    SportSeek-POC.bat /stop      stop everything
 rem    Other options (/noexpo /nobrowser /min) are passed on to start-all.bat.
 rem
@@ -89,24 +89,40 @@ goto :fail
 :haspoc
 
 rem ---- 2. Your PostgreSQL details (kept in your user profile, never in git)
-if /i "%MODE%"=="config" if exist "%SETTINGS%" del "%SETTINGS%"
-if exist "%SETTINGS%" goto :havesettings
+if /i not "%MODE%"=="config" goto :notconfig
+rem Services already running keep the old password until they are restarted, so stop them first.
+if exist "%POC%\stop-all.bat" call "%POC%\stop-all.bat" /quiet
+if exist "%SETTINGS%" del "%SETTINGS%"
+:notconfig
+if not exist "%SETTINGS%" goto :asksettings
+call "%SETTINGS%"
+if defined PG_PASSWORD goto :havesettings
+echo.
+echo [!] Your saved PostgreSQL password is empty. Please enter it again.
+del "%SETTINGS%"
+:asksettings
 echo.
 echo Your PostgreSQL details are needed once. They are saved only for you, in
 echo   %SETTINGS%
+echo The password is the one you chose when you installed PostgreSQL (for the user "postgres").
 set "PG_USER="
 set "PG_PASSWORD="
 set "PG_PORT="
 set /p "PG_USER=PostgreSQL user [postgres]: "
+:askpassword
 set /p "PG_PASSWORD=PostgreSQL password: "
+if defined PG_PASSWORD goto :passwordok
+echo [!] The password can't be empty: PostgreSQL on Windows always has one. Type it and press Enter.
+goto :askpassword
+:passwordok
 set /p "PG_PORT=PostgreSQL port [5432]: "
 if not defined PG_USER set "PG_USER=postgres"
 if not defined PG_PORT set "PG_PORT=5432"
 rem PowerShell writes the file so any character in the password survives (% is doubled for cmd).
 powershell -NoProfile -Command "function E($v) { $v -replace '%%','%%%%' }; $q = [char]34; $lines = @('@rem SportSeek POC PostgreSQL settings for ' + $env:USERNAME + '. Run the launcher with /config to change them.', ('set ' + $q + 'PG_USER=' + (E $env:PG_USER) + $q), ('set ' + $q + 'PG_PASSWORD=' + (E $env:PG_PASSWORD) + $q), ('set ' + $q + 'PG_PORT=' + (E $env:PG_PORT) + $q)); Set-Content -Path $env:SETTINGS -Value $lines -Encoding ASCII" || (echo [X] Could not save %SETTINGS% & goto :fail)
 echo [ok] Saved.
-:havesettings
 call "%SETTINGS%"
+:havesettings
 if not defined PG_PORT set "PG_PORT=5432"
 
 rem The API reads this ahead of appsettings.json, so nobody has to edit files that come from git.

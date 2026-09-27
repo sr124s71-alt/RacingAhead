@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using OpenIddict.Validation.AspNetCore;
 using SportSeek.Identity.Api.Data;
 using SportSeek.Identity.Api.Domain;
@@ -83,7 +84,28 @@ builder.Services.AddScoped<BootstrapService>();
 
 var app = builder.Build();
 
-await Seeder.InitialiseAsync(app.Services);
+try
+{
+    await Seeder.InitialiseAsync(app.Services);
+}
+catch (Exception e) when (e is NpgsqlException || e.InnerException is NpgsqlException)
+{
+    // Say plainly what's wrong instead of a stack trace: this is the first thing people hit.
+    var cs = new NpgsqlConnectionStringBuilder(builder.Configuration.GetConnectionString("Identity"));
+    var reason = (e as NpgsqlException ?? (NpgsqlException)e.InnerException!).Message;
+    var hint = e is PostgresException { SqlState: "28P01" } || reason.Contains("password", StringComparison.OrdinalIgnoreCase)
+        ? "The PostgreSQL password is wrong or missing. Run SportSeek-POC.bat /config and enter the password you chose when installing PostgreSQL."
+        : $"Check that PostgreSQL is running and listening on {cs.Host}:{cs.Port} (Windows: services.msc, service 'postgresql...').";
+    Console.Error.WriteLine();
+    Console.Error.WriteLine("============================================================================");
+    Console.Error.WriteLine($" Can't connect to PostgreSQL as user '{cs.Username}' on {cs.Host}:{cs.Port}.");
+    Console.Error.WriteLine($" Reason: {reason}");
+    Console.Error.WriteLine($" Fix:    {hint}");
+    Console.Error.WriteLine("============================================================================");
+    Console.Error.WriteLine();
+    Environment.ExitCode = 3;
+    return;
+}
 
 app.UseCors();
 app.UseMiddleware<MinimumVersionMiddleware>();
