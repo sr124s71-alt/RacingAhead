@@ -1,0 +1,9 @@
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+app/node_modules/
+app/.expo/
+app/dist/
+app/web-build/
