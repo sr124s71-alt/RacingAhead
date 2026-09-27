@@ -60,6 +60,26 @@ flowchart LR
 
 ## Run it locally
 
+### Quick start: one file starts everything
+
+After the prerequisites below and the connection string in step 1:
+
+| | Windows | macOS / Linux |
+|---|---|---|
+| Start everything | double-click `start-all.bat` | `./start-all.sh` |
+| Stop everything | `stop-all.bat` | `./stop-all.sh` |
+| Start when you sign in | `scripts\install-autostart.bat` (remove: `scripts\remove-autostart.bat`) | add `start-all.sh --no-browser` to your login items |
+
+The launcher checks .NET, Node.js and PostgreSQL (on Windows it tries to start the PostgreSQL service), installs npm packages on first run, then starts:
+
+- the Identity API on http://localhost:5080
+- the Lit web app (demo stage) on http://localhost:8082, which opens in your browser
+- the Expo app on http://localhost:8081/?app=stage (skip it with `/noexpo` or `--no-expo`)
+
+Each service runs in a loop that restarts it within seconds if it stops or crashes. On Windows each service has its own window: closing that window stops that service. Restarts are recorded in `logs/restarts.log`. A service that is already running is left alone. Windows may ask once to allow the API through the firewall.
+
+"Always running" means while your computer is on and you are signed in. Sign-ins to the demo reset when the API restarts, because the POC's signing keys are regenerated at start-up. The shared prototype link doesn't need any of this: it runs in the viewer's browser.
+
 ### Prerequisites
 
 - **.NET 8 SDK**: `dotnet --list-sdks` should show 8.0.x
@@ -189,6 +209,8 @@ The Admin Portal can never self-register or grant itself Admin, and a password s
 
 ```
 poc/identity/
+├── start-all.bat / start-all.sh  start everything, restart on failure (stop-all.* to stop)
+├── scripts/                      run-forever.bat, install/remove-autostart.bat
 ├── SportSeek.Identity.sln
 ├── api/                          ASP.NET Core 8 Identity module
 │   ├── Program.cs                OpenIddict server + validation, DI, rate limiting
