@@ -111,6 +111,10 @@ $env:EXPO_PUBLIC_API_URL="http://<your-laptop-LAN-IP>:5080"; npx expo start
 
 Allow port 5080 through the laptop firewall. The app opens on a launcher where you pick User App, Partner App or Admin Portal.
 
+### Shareable prototype (no server)
+
+`npm run build:proto` (in `app/`) builds a static web version where the Identity API runs in the browser (`app/src/mock/server.ts`, a port of the .NET linking, OTP and bootstrap rules). It opens straight on the demo stage, switches to tabs at phone width, and keeps each viewer's test data on their own device. Use it to share a clickable link; use the real API for the actual demo.
+
 ### 4. Run the acceptance tests
 
 ```bash

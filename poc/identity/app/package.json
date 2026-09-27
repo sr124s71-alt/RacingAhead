@@ -21,7 +21,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:proto": "EXPO_PUBLIC_MOCK=1 EXPO_OFFLINE=1 expo export --platform web --output-dir dist-proto"
   },
   "private": true
 }

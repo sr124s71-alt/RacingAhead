@@ -1,8 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { createElement, useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { API_URL, APP_VERSION, Config, isBelow, makeApi, Tokens, Variant } from './src/api';
+import { API_URL, APP_VERSION, Config, isBelow, makeApi, MOCK, Tokens, Variant } from './src/api';
 import { Admin } from './src/screens/Admin';
 import { Phase1Login, UpdateRequired } from './src/screens/Phase1';
 import { Profile } from './src/screens/Profile';
@@ -14,6 +14,7 @@ type Route = Variant | 'launcher' | 'stage';
 
 /** On web the app variant comes from ?app=user|partner|admin|stage, so each browser tab or frame is its own app. */
 function initialRoute(): Route {
+  if (MOCK) return 'stage';
   if (Platform.OS !== 'web' || typeof window === 'undefined') return 'launcher';
   const app = new URLSearchParams(window.location.search).get('app');
   return app === 'user' || app === 'partner' || app === 'admin' || app === 'stage' ? app : 'launcher';
@@ -144,6 +145,105 @@ function Launcher({ onPick }: { onPick: (r: Route) => void }) {
 
 /** Web only: the three apps in separate frames, so each keeps its own session exactly like separate apps on separate phones. */
 function DemoStage() {
+  return MOCK ? <PrototypeStage /> : <FramedStage />;
+}
+
+const GUIDE = [
+  ['User App', 'Register with any Indian mobile, e.g. 98111 22233. Codes arrive in the Dev SMS inbox: tap to use.'],
+  ['Partner App', 'Use the same number. The account is found, and a role is only added after you prove ownership by OTP.'],
+  ['Admin Portal', 'Sign in with the pre-filled number: one identity with both roles, the audit log, Phase 1 bootstrap, remote switch.'],
+] as const;
+
+/**
+ * Shareable prototype: the three apps side by side in one page (no iframes), sharing the in-browser API.
+ * Below 1100px wide it becomes tabs, so it works on a phone.
+ */
+function PrototypeStage() {
+  const { width } = useWindowDimensions();
+  const wide = width >= 1100;
+  const [tab, setTab] = useState<Variant>('user');
+  const apps: [Variant, string, number][] = [
+    ['user', 'User App', 1],
+    ['partner', 'Partner App', 1],
+    ['admin', 'Admin Portal', 1.55],
+  ];
+  return (
+    <View style={[pst.stage, { padding: wide ? 16 : 10 }]}>
+      <View style={pst.top}>
+        <View style={{ flexShrink: 1, minWidth: 260 }}>
+          <Text style={pst.title}>SportSeek Shared Identity</Text>
+          <Text style={pst.sub}>F3 prototype · one person, one identity, across apps</Text>
+        </View>
+        {wide && (
+          <View style={pst.guide}>
+            {GUIDE.map(([app, text], i) => (
+              <View key={app} style={pst.step}>
+                <Text style={pst.stepNo}>{i + 1}</Text>
+                <Text style={pst.stepText}>
+                  <Text style={{ fontWeight: '800', color: '#F1F5F9' }}>{app}. </Text>
+                  {text}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+      {!wide && (
+        <View style={pst.tabs}>
+          {apps.map(([v, name]) => (
+            <Pressable
+              key={v}
+              accessibilityRole="tab"
+              onPress={() => setTab(v)}
+              style={[pst.tab, tab === v && { backgroundColor: THEMES[v].primary }]}
+            >
+              <Text style={[pst.tabText, tab === v && { color: '#fff' }]}>{name}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+      <View style={{ flex: 1, flexDirection: 'row', gap: 14, minHeight: 0 }}>
+        {apps.map(([v, , flex]) => (
+          <View key={v} style={[pst.device, { flex }, !wide && tab !== v && { display: 'none' }]}>
+            <AppShell variant={v} />
+          </View>
+        ))}
+      </View>
+      <Text style={pst.foot}>
+        Prototype: the Identity API runs in your browser and your test data stays on this device. OTPs are shown in each app's Dev SMS inbox
+        instead of being texted. Start over from Admin Portal → Remote switch → Reset demo data.
+      </Text>
+    </View>
+  );
+}
+
+const pst = StyleSheet.create({
+  stage: { flex: 1, backgroundColor: '#0F172A', gap: 12, height: '100%' },
+  top: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'space-between' },
+  title: { color: '#F8FAFC', fontSize: 19, fontWeight: '800' },
+  sub: { color: '#94A3B8', fontSize: 13, marginTop: 2 },
+  guide: { flexDirection: 'row', gap: 14, flex: 1, maxWidth: 980 },
+  step: { flexDirection: 'row', gap: 8, flex: 1, alignItems: 'flex-start' },
+  stepNo: {
+    color: '#0F172A',
+    backgroundColor: '#CBD5E1',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    textAlign: 'center',
+    lineHeight: 20,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  stepText: { color: '#CBD5E1', fontSize: 12, lineHeight: 17, flex: 1 },
+  tabs: { flexDirection: 'row', gap: 6, backgroundColor: '#1E293B', padding: 4, borderRadius: 12 },
+  tab: { flex: 1, paddingVertical: 9, borderRadius: 9, alignItems: 'center' },
+  tabText: { color: '#CBD5E1', fontWeight: '700', fontSize: 13 },
+  device: { borderRadius: 18, overflow: 'hidden', backgroundColor: '#fff', minWidth: 0 },
+  foot: { color: '#94A3B8', fontSize: 12, lineHeight: 17 },
+});
+
+function FramedStage() {
   const frame = (app: Variant, flex: number) =>
     createElement('iframe', {
       src: `?app=${app}`,

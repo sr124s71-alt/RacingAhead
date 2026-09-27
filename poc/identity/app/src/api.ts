@@ -1,4 +1,8 @@
 import { Platform } from 'react-native';
+import { mockFetch } from './mock/server';
+
+/** Shareable prototype build: the Identity API runs in the browser (src/mock/server.ts). */
+export const MOCK = process.env.EXPO_PUBLIC_MOCK === '1';
 
 /** Bump to show minimum-version enforcement: the admin can raise the minimum above this. */
 export const APP_VERSION = '1.0.0';
@@ -15,11 +19,12 @@ export const CLIENT_ID: Record<Variant, string> = {
  * API base URL. On a phone (Expo Go) set EXPO_PUBLIC_API_URL to http://<your-laptop-LAN-IP>:5080.
  * In the browser it defaults to the same host as the page, port 5080.
  */
-export const API_URL: string =
-  process.env.EXPO_PUBLIC_API_URL ??
-  (Platform.OS === 'web' && typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.hostname}:5080`
-    : 'http://localhost:5080');
+export const API_URL: string = MOCK
+  ? 'in-browser prototype API'
+  : (process.env.EXPO_PUBLIC_API_URL ??
+    (Platform.OS === 'web' && typeof window !== 'undefined'
+      ? `${window.location.protocol}//${window.location.hostname}:5080`
+      : 'http://localhost:5080'));
 
 export class ApiError extends Error {
   constructor(
@@ -101,7 +106,7 @@ export function makeApi(variant: Variant) {
     if (token) headers.Authorization = `Bearer ${token}`;
     let res: Response;
     try {
-      res = await fetch(API_URL + path, { ...init, headers });
+      res = MOCK ? await mockFetch(path, { ...init, headers }) : await fetch(API_URL + path, { ...init, headers });
     } catch {
       throw new ApiError(0, 'network', `Can't reach the Identity API at ${API_URL}. Is it running?`);
     }
