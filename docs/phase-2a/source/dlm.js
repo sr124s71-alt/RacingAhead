@@ -129,12 +129,12 @@ const s3 = [
   ...T([['Level', 2], ['SportSeek', 4], ['Srivin Platforms', 4]], [
     ['Steering Committee', 'Executive sponsor; Product Owner', 'Engagement Director; Delivery Manager (TPM)'],
     ['Programme leadership', 'Product Owner; technical reviewer; operations lead', 'Delivery Manager; Solution Architect; QA Lead; UX Lead'],
-    ['Squad A — Platform & Identity', 'Embedded developer(s)', 'Tech lead, backend engineers, mobile engineer, QA'],
-    ['Squad B — Partner & Booking', 'Embedded developer(s)', 'Tech lead, backend engineers, mobile engineers, QA'],
-    ['Squad C — Notifications & Ledger', 'Embedded developer(s)', 'Backend engineers, front-end engineer, QA'],
-    ['Squad D — Web Application', 'Embedded developer(s)', 'Front-end lead, front-end engineers, QA'],
-    ['Cross-cutting', 'UAT testers; infrastructure / ops contact', 'DevOps/SRE, security tester (VAPT), performance tester, business analysts, UI designers']]),
-  P('Indicative Srivin headcount by period is in the WBS & Integrated Project Plan, Section 13. The final composition and rate card will be in the commercial proposal, as the SOW Next Steps require.'),
+    ['Squad A — Platform & Identity', 'Embedded .NET developer', '.NET tech lead, .NET backend engineer, React Native engineer, QA'],
+    ['Squad B — Partner & Booking', 'Embedded .NET or React Native developer', '.NET tech lead, .NET backend engineer, React Native lead and engineer, QA'],
+    ['Squad C — Notifications & Ledger', 'Embedded .NET developer', '.NET backend engineers, QA'],
+    ['Squad D — Web Application', 'Embedded React developer', 'React/Next.js front-end lead and engineers'],
+    ['Cross-cutting', 'UAT testers; infrastructure / ops contact', 'PostgreSQL database engineer, QA lead, DevOps/SRE, security tester (VAPT), performance tester, business analysts, UI designers, Scrum Master']]),
+  P('The technology stack is React Native (mobile), .NET (back end) and PostgreSQL (database), with React/Next.js proposed for the new web application. Month-by-month resource loading, the skills required for each role and the resource-to-WBS assignment matrix are in the WBS & Integrated Project Plan, Section 13. The final composition and rate card will be in the commercial proposal, as the SOW Next Steps require.'),
   H2('8.2 Key roles'),
   ...T([['Role', 2.4], ['Accountabilities', 7.6]], [
     ['Delivery Manager (TPM)', 'Single point of accountability for delivery; integrated plan, RAID, governance, change control, reporting, escalation; chairs weekly review; prepares steering packs.'],

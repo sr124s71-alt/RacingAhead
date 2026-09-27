@@ -38,3 +38,4 @@ figcaption { font-style: italic; color: #5A5A5A; font-size: 8.5pt; margin-top: 3
 .cover .csub { font-size: 13pt; margin-bottom: 40mm; }
 .toc .toch { font-size: 16pt; font-weight: bold; color: #1F3864; margin-bottom: 10pt; }
 .toc .tocl { font-size: 10.5pt; padding: 4pt 0; border-bottom: 0.5pt dotted #D5D8DE; }
+.pbk { break-after: page; height: 0; }

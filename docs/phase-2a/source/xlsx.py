@@ -57,5 +57,23 @@ for i,t in enumerate(['SportSeek Phase 2A — Project Plan workbook (SRV-SPS-2A-
  'Gantt columns are weeks commencing Monday. Colours follow the workstream legend used in the plan document.'],1):
     ws4.cell(i,1,t).font=Font(bold=(i==1),size=12 if i==1 else 10)
 ws4.column_dimensions['A'].width=130
-wb.move_sheet('Read me',offset=-3)
+
+rs=json.load(open('res.json'))
+ws5=wb.create_sheet('Resource loading')
+hh=['Skill group','Role','Seniority']+rs['months']+['Person-months','Key technical skills','Tools']
+for i,h in enumerate(hh,1):
+    c=ws5.cell(1,i,h); c.font=H; c.fill=HF; c.border=BD; c.alignment=Alignment(wrap_text=True,vertical='center')
+for k,rr in enumerate(rs['roles'],2):
+    vals=[rs['groups'][rr['group']],rr['role'],rr['seniority']]+rr['load']+[rr['pm'],rr['skills'],rr['tools']]
+    for i,v in enumerate(vals,1):
+        c=ws5.cell(k,i,v); c.border=BD; c.alignment=Alignment(wrap_text=True,vertical='top')
+        if 4<=i<4+len(rs['months']) and v: c.fill=PatternFill('solid',fgColor=('9EC5F4' if v<1 else '5598E7' if v<2 else '2A78D6')); 
+n=len(rs['roles'])+2
+ws5.cell(n,2,'Total Srivin FTE').font=Font(bold=True)
+for j in range(len(rs['months'])+1):
+    col=get_column_letter(4+j); c=ws5.cell(n,4+j,f'=SUM({col}2:{col}{n-1})'); c.font=Font(bold=True); c.border=BD
+for i,w in enumerate([22,34,18]+[8]*len(rs['months'])+[12,90,40],1): ws5.column_dimensions[get_column_letter(i)].width=w
+ws5.freeze_panes='D2'
+
+wb.move_sheet('Read me',offset=-4)
 wb.save('out_plan.xlsx'); print('ok',r-4)

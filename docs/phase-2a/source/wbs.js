@@ -1,13 +1,14 @@
 const L = require('./lib');
 const { P, H1, H1n, H2, H3, B, N, T, C, IMG, SP, cover, contents, build, LAND_W } = L;
 const plan = require('./plan.json');
+const res = require('./res.json');
 const fmt = s => { const d = new Date(s + 'T00:00:00'); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }); };
 const OUT = process.argv[2];
 
 const toc = ['1. Purpose and how to use this plan', '2. Executive summary', '3. Feasibility of the 20 October 2026 target', '4. Release strategy for Phase 2A',
   '5. Planning basis and assumptions', '6. Work Breakdown Structure (WBS) and WBS dictionary', '7. Integrated schedule (Gantt)', '8. Detailed activity schedule',
   '9. Dependency management', '10. Critical path and schedule risk', '11. Milestones, gates and acceptance evidence', '12. Sprint calendar',
-  '13. Indicative resource plan', '14. Baseline control and re-planning rules', 'Appendix A. SOW-to-WBS traceability'];
+  '13. Resource plan, loading and technical skills', '14. Baseline control and re-planning rules', 'Appendix A. SOW-to-WBS traceability'];
 
 const s1 = [
   ...cover({ title: 'Work Breakdown Structure & Integrated Project Plan', subtitle: 'Phase 2A — Harden & Unify, including the 20 October 2026 public launch', docId: 'SRV-SPS-2A-PLN-001' }),
@@ -19,10 +20,10 @@ const s2 = [
   P('The plan is built only from what the two source documents state. Where the SOW flags an item as open (marked ⚑ in the SOW), this plan does not assume an answer. It records the item as a dated decision that SportSeek needs to make (Section 9.3), along with what happens to the schedule if the decision is late.'),
   H2('1.1 Companion documents'),
   ...T([['Document', 3], ['Purpose', 7]], [
-    ['SRV-SPS-2A-PLN-001 (this document)', 'WBS, schedule, dependencies, critical path, milestones, resource plan'],
+    ['SRV-SPS-2A-PLN-001 (this document)', 'WBS, schedule, dependencies, critical path, milestones, resource loading and skills'],
     ['SRV-SPS-2A-DLM-002 Project Delivery Model', 'How we deliver: lifecycle, agile cadence, governance, quality, release, change, risk, KT and support'],
     ['SRV-SPS-2A-TAD-003 Technical Approach', 'How we solve the problem technically: architecture, per-module design approach, engineering practices'],
-    ['SRV-SPS-2A-PLN-001a Project Plan workbook (.xlsx)', 'The same schedule and dependency register in spreadsheet form, for import into SportSeek\'s chosen tool (JIRA or Trello)']]),
+    ['SRV-SPS-2A-PLN-001a Project Plan workbook (.xlsx)', 'The same schedule, dependency register and resource loading in spreadsheet form, for import into SportSeek\'s chosen tool (JIRA or Trello)']]),
   H2('1.2 Conventions'),
   ...B(['**Dates** are calendar dates in IST. Durations are in working days (Monday–Friday). Indian public and festival holidays will be applied once the joint holiday calendar is agreed at kick-off (see Assumption A6).',
     '**Owner**: "Srivin" = Srivin Platforms; "SportSeek" = RacingAhead / SportSeek; "Joint" = both parties, with Srivin driving.',
@@ -93,7 +94,8 @@ const s2 = [
     ['A9', 'Transaction Ledger scope is the Admin dashboard plus a partner settlement view in the web application, as in SOW 8.1–8.2. Any User/Partner mobile app ledger view (SOW 8.1 open item; SOW 12.1 M3 wording) is confirmed by D15.', 'Adds about 1 sprint to M3 via change request'],
     ['A10', 'Phase 2B and 2C scope (Community, Expert Booking UX, Analytics, Academy, Marketplace, Rewards) is excluded from this plan (SOW 3.2–3.3), except that domain events are designed in 2A so 2B analytics can consume them.', '—'],
     ['A11', 'The 2A.0 launch excludes new Phase 2A domain features. Anything added at the Scope Gate must fit within the 14 Oct code freeze.', 'Launch risk rises; Go/No-Go may fail'],
-    ['A12', 'Two-week sprints from 16 Nov 2026. LLD and UI for each module are produced one sprint ahead of build.', '—']], { size: 17 }),
+    ['A12', 'Two-week sprints from 16 Nov 2026. LLD and UI for each module are produced one sprint ahead of build.', '—'],
+    ['A13', 'Technology stack as confirmed by SportSeek: React Native mobile apps, .NET back end, PostgreSQL database. Phase 2A extends this stack; the new web application uses React (TypeScript) to share skills and design tokens with the React Native apps (Section 13.1).', 'Skills mix in Section 13 re-planned']], { size: 17 }),
 
   H1('6. Work Breakdown Structure (WBS) and WBS dictionary'),
   P('The WBS is deliverable-oriented and follows the 100% rule: every Phase 2A scope item in SOW Section 3.1, and every deliverable in SOW Section 13, maps to exactly one work package (see Appendix A). Level 1 elements are shown below; Level 2 work packages, their deliverables and completion criteria follow in the dictionary.'),
@@ -211,13 +213,70 @@ const s4 = [
     ['S10', '22 Mar – 02 Apr 2027', 'Web parity, browser/accessibility testing; KT-2 close'],
     ['S11', '05 – 16 Apr 2027', '2A.3 SIT, end-to-end regression, performance and pen test'],
     ['UAT', '19 – 30 Apr 2027', '2A.3 UAT; go-live 4 May; hypercare and KT-3 to 4 Jun']], { size: 17 }),
-  H1('13. Indicative resource plan'),
-  P('Full-time-equivalent (FTE) loading of the Srivin core team by period. It is indicative: the final team composition and rate card will be in the commercial proposal, as the SOW Next Steps require. SportSeek developers (SOW 5) are embedded on top of these numbers.'),
-  ...T([['Role', 3], ['Launch\n28 Sep–20 Oct', 1.5], ['Discovery\nOct–Nov', 1.5], ['Build\nNov–Apr', 1.5], ['Release & transition\nApr–Jun', 1.7]], [
-    ['Delivery / Programme Manager', '1', '1', '1', '1'], ['Solution Architect', '1', '1', '1', '0.5'], ['Business Analyst', '1', '2', '2', '1'],
-    ['UX / UI Designer', '—', '2', '2', '0.5'], ['Backend Engineers (incl. tech lead)', '2', '1', '6', '2'], ['Mobile Engineers', '2', '—', '3', '1'],
-    ['Web Front-end Engineers', '—', '—', '3', '1'], ['QA Engineers (functional + automation)', '2', '1', '3', '2'], ['DevOps / SRE', '1', '1', '1.5', '1'],
-    ['Security tester (VAPT)', '0.5', '0.25', '0.25', '0.5'], ['Performance tester', '0.5', '—', '0.25', '0.5'], ['**Total (indicative FTE)**', '**11**', '**9.25**', '**23**', '**11**']], { size: 17 }),
+  H1('13. Resource plan, loading and technical skills'),
+  P('This section shows who Srivin will staff, with which technical skills, and when. It is sized to the schedule in Sections 7–8 and to SportSeek\'s confirmed technology stack: **React Native** mobile apps, a **.NET** back end and **PostgreSQL**. Loading is shown as monthly average full-time equivalents (FTE). October includes mobilisation from 28 September. Final names, CVs and rates will be in the commercial proposal. SportSeek developers and testers (Section 13.6) are in addition to these numbers.'),
+  H2('13.1 Technology stack and the skills it demands'),
+  ...T([['Layer', 1.7], ['Technology', 2.6], ['Skills we staff for', 5.7]], [
+    ['Mobile apps (User, Partner)', 'React Native (TypeScript), iOS and Android', 'OIDC/PKCE login on mobile, push (FCM/APNs), deep links and app-switch handling, schema-driven onboarding forms, store release engineering, minimum-version enforcement'],
+    ['Back end (modular monolith)', '.NET — ASP.NET Core Web API, C#, EF Core with Npgsql', 'Domain module boundaries, OIDC identity service, transactional outbox and messaging, Razorpay payments/refunds/Route and webhooks, background scheduling, idempotent APIs'],
+    ['Database', 'PostgreSQL (schema per domain)', 'Expand/contract migrations, JSONB with schema validation, exclusion constraints against double-booking, geospatial radius search, query tuning, identity de-duplication and data migration'],
+    ['Web application & Admin Portal', 'React + TypeScript (Next.js recommended; ADR-05 in the Technical Approach)', 'Server-rendered public pages for SEO, shared design tokens with the React Native apps, data-heavy admin screens (ledger filters, sorting, exports), WCAG 2.1 AA'],
+    ['Quality engineering', 'xUnit + Testcontainers (.NET), Jest / React Native Testing Library, Detox or Maestro (mobile), Playwright (web), Postman/Newman (API), k6 or JMeter (load)', 'Automation in CI, regression packs for Phase 1 journeys, payment and refund test scenarios in Razorpay test mode'],
+    ['Platform & operations', 'SportSeek-owned cloud, CI/CD and managed PostgreSQL', 'Infrastructure as code, .NET and React Native build pipelines (Fastlane), OpenTelemetry observability, secrets management, backup/restore drills']], { size: 17 }),
+  H2('13.2 Team composition and technical skills'),
+  ...T([['Role', 1.9], ['Seniority', 1.1], ['Peak FTE', 0.7], ['Person-months', 0.9], ['Key technical skills', 4.2], ['Tools', 1.6]],
+    res.roles.map(r => [`**${r.role}**`, r.seniority, String(r.peak), String(r.pm), r.skills, r.tools]).concat([['**Total**', '', '', `**${res.pm}**`, '', '']]), { size: 15 }),
+];
+
+const s5 = [
+
+  H1n('13. Resource plan (continued)'),
+  H2('13.3 Monthly resource loading (FTE)'),
+  ...IMG('resource_histogram.png', 780, 'Figure 4 — Srivin resource loading by skill group'),
+  ...T([['Role', 3.2]].concat(res.months.map(m => [m, 0.85])).concat([['Person-months', 1.1]]),
+    res.roles.map(r => [r.role].concat(r.load.map(v => v ? String(v) : '—')).concat([String(r.pm)]))
+      .concat([['**Total Srivin FTE**'].concat(res.total.map(v => `**${v}**`)).concat([`**${res.pm}**`])]), { width: LAND_W, size: 16 }),
+  P('**How the loading follows the plan:** in October the launch squad (about 11 FTE) runs alongside the discovery cell (architect, analysts, UX). From 16 November the four build squads ramp up to a peak of about 24 FTE in December–January, when Identity, Notifications, Partner/Service, Booking hardening and the Web application are all in flight. From April the team tapers through 2A.3 testing, go-live, hypercare and KT, leaving a small core for closure in early June. The ramp-down is deliberate: as Srivin engineers roll off, SportSeek developers who have worked in the squads take over ownership (Section 13.7).'),
+  H2('13.4 Squad composition at peak build (Dec 2026 – Mar 2027)'),
+  ...T([['Squad', 2.2], ['Scope (WBS)', 3.2], ['Srivin members', 5], ['SportSeek members', 2.2]], [
+    ['A — Platform & Identity', '4 Foundation, 5 Shared Identity; then 11 Ledger APIs', '.NET Tech Lead, .NET Backend Engineer, React Native Engineer, QA Engineer (shared with C), PostgreSQL Database Engineer (shared)', '1 .NET developer (recommended)'],
+    ['B — Partner & Booking', '7 Partner/Service model, 8 Booking hardening', '.NET Tech Lead, .NET Backend Engineer, React Native Lead, React Native Engineer, QA Engineer', '1 .NET or React Native developer (recommended)'],
+    ['C — Notifications & Ledger', '6 Notification platform, 11 Transaction Ledger', '2 .NET Backend Engineers, QA Engineer (shared with A)', '1 .NET developer (recommended)'],
+    ['D — Web Application', '12 Web application; Admin Portal screens for 7 and 11', 'Web Front-end Lead, 2 Web Front-end Engineers', '1 React developer (recommended)'],
+    ['Cross-squad', 'All', 'Delivery Manager, Scrum Master, Solution Architect, 2 Business Analysts, 2 UX/UI Designers, QA Lead, DevOps/SRE, Security and Performance Engineers (per release)', 'Product Owner, tech reviewer, ops lead']], { width: LAND_W, size: 16 }),
+  L.BR(),
+  H2('13.5 Resource-to-WBS assignment matrix'),
+  P('● = primary responsibility (does most of the work); ○ = supporting or reviewing. Columns are the Level 1 WBS elements in Section 6.1.'),
+  ...(() => {
+    const cols = ['1 PM', '2 Launch', '3 Design', '4 Found.', '5 Identity', '6 Notif.', '7 Partner', '8 Booking', '9 Rel 2A.1', '10 Rel 2A.2', '11 Ledger', '12 Web', '13 Rel 2A.3', '14 Support'];
+    const M = {
+      'Delivery Manager / TPM': 'PPssssssPPssPs', 'Scrum Master': 's--PPPPPssPPs-', 'Solution Architect (.NET / PostgreSQL)': 'sPPPPPPsssPsPs',
+      'Business Analyst': '-sPsPsPPssPss-', 'UX / UI Designer': '--P-ssss---sP-', '.NET Tech Lead': '-PsPPsPPsssssP', '.NET Backend Engineer': '-PsPPPPP--P--P',
+      'PostgreSQL Database Engineer': '-sssP-PP--P-s-', 'React Native Lead': '-Ps-PPPsss--sP', 'React Native Engineer': '-P--PsPP-----s', 'Web Front-end Lead (React)': '--s-------sPs-',
+      'Web Front-end Engineer (React)': '----------PP--', 'QA Lead (Automation)': 'sPssssssPPsssP', 'QA Engineer': '-P--PPPPPPPPP-', 'DevOps / SRE Engineer': '-P-PssssPPssPP',
+      'Security Engineer (VAPT)': '-P------sP--P-', 'Performance Engineer': '-P-------P--P-' };
+    Object.entries(M).forEach(([k, v]) => { if (v.length !== 14) throw new Error('matrix width ' + k); });
+    return T([['Role', 3]].concat(cols.map(c => [c, 0.72])), res.roles.map(r => [r.role].concat([...M[r.role]].map(ch => ch === 'P' ? '●' : ch === 's' ? '○' : ''))), { width: LAND_W, size: 15 });
+  })(),
+];
+
+const s6 = [
+
+  H1n('13. Resource plan (continued)'),
+  H2('13.6 SportSeek-provided resources'),
+  ...T([['Role', 2.4], ['Number', 1.2], ['When', 2.4], ['Skills / responsibilities', 4]], [
+    ['Product Owner', '1 (named)', 'Throughout; decisions within 1 working day during the launch window', 'Backlog priority, story acceptance, SOW open-item decisions (SOW §5)'],
+    ['Technical reviewer / architect', '1 (part-time)', 'Design authority, HLD/LLD reviews', '.NET and PostgreSQL familiarity with Phase 1; review and approve designs'],
+    ['SportSeek developers', '4 recommended (1 per squad); number to be confirmed (D9)', 'From Sprint 1 (16 Nov 2026)', '.NET, React Native or React, as per squad (Section 13.4); full squad members'],
+    ['UAT testers', '2 recommended', '15–19 Oct 2026; Jan, Mar and Apr 2027 UAT windows', 'Business scenario testing across User, Partner, Admin and Web'],
+    ['Operations lead', '1', 'From KT-0; co-operate stage from 2A.2', 'Receives infrastructure handover (SOW §15.1)'],
+    ['Legal / compliance contact', 'As needed', 'Launch (by 9 Oct) and DPDP reviews', 'Privacy policy, terms, DPDP notice, refund policy']], { size: 17 }),
+  H2('13.7 Onboarding, continuity and roll-off'),
+  ...B(['**Launch squad on day 1**: named engineers with React Native, .NET and PostgreSQL experience start on 28–29 Sep, so the Phase 1 assessment begins the moment access is granted (D2).',
+    '**Key-person continuity**: the Delivery Manager, Solution Architect, .NET Tech Leads, React Native Lead and QA Lead stay for the full engagement. Any change needs SportSeek notice and a two-week overlap handover.',
+    '**Ramp-up**: build squads onboard in the week of 9 Nov with Phase 1 code walkthroughs, environment set-up and pairing on HLD spikes, so Sprint 1 starts productive.',
+    '**Skills coverage**: every critical skill (.NET identity/OIDC, PostgreSQL migrations, React Native release engineering, Razorpay integration) is held by at least two people across Srivin and SportSeek by the end of 2A.1.',
+    '**Roll-off**: engineers roll off only after the KT checklist for their module is signed (SOW §12.2), and SportSeek developers take over module ownership as Srivin capacity reduces from April 2027.']),
   H1('14. Baseline control and re-planning rules'),
   ...B(['**Baselines:** this plan is Baseline 0. Baseline 1 is set at the Phase 2A re-baseline (13 Nov 2026), once HLD and the open items (D10, D11, D15, D16, D20) are closed.',
     '**Tolerances:** a forecast slip of more than 5 working days on any go-live milestone, or more than 10 working days on any build milestone, is escalated to the Steering Committee with options.',
@@ -243,4 +302,4 @@ const s4 = [
 ];
 
 build({ out: OUT, title: 'SportSeek Phase 2A — WBS & Integrated Project Plan', subtitle: 'WBS, schedule and dependencies', short: 'WBS & Integrated Project Plan',
-  sections: [{ cover: true, children: s1 }, { children: s2 }, { landscape: true, children: s3 }, { children: s4 }] });
+  sections: [{ cover: true, children: s1 }, { children: s2 }, { landscape: true, children: s3 }, { children: s4 }, { landscape: true, children: s5 }, { children: s6 }] });
