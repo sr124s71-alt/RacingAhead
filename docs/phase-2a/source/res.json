@@ -86,7 +86,7 @@
    "role": "Senior .NET Engineer (AI-augmented)",
    "seniority": "Senior (8+ yrs)",
    "load": [
-    2,
+    3,
     2,
     2,
     2,
@@ -96,8 +96,8 @@
    ],
    "skills": "C# / ASP.NET Core; EF Core with Npgsql; OIDC implementation (e.g. OpenIddict); Razorpay payments, refunds, Route and webhooks; notification channel integrations; idempotent APIs; background processing",
    "tools": "Spec-driven development with AI coding agents: agents generate code and tests from the approved spec, engineers review, harden and own every merge",
-   "pm": 12.5,
-   "peak": 2
+   "pm": 13.5,
+   "peak": 3
   },
   {
    "group": "backend",
@@ -122,7 +122,7 @@
    "role": "Senior React Native Engineer (AI-augmented)",
    "seniority": "Senior (7+ yrs)",
    "load": [
-    1,
+    2,
     1,
     1,
     1,
@@ -132,8 +132,8 @@
    ],
    "skills": "React Native + TypeScript on iOS/Android; OIDC with PKCE; push (FCM/APNs); deep links and app-switch handling; schema-driven forms; store release engineering with Fastlane; minimum-version enforcement",
    "tools": "AI agents generate screens from design tokens and specs, and component and E2E tests; engineer reviews and tunes on real devices",
-   "pm": 6.25,
-   "peak": 1
+   "pm": 7.25,
+   "peak": 2
   },
   {
    "group": "web",
@@ -194,7 +194,7 @@
    "role": "Security Engineer (VAPT, on demand)",
    "seniority": "Senior (8+ yrs)",
    "load": [
-    0.5,
+    0.75,
     0.25,
     0.25,
     0,
@@ -202,10 +202,10 @@
     0.5,
     0
    ],
-   "skills": "Web, API and mobile penetration testing (OWASP WSTG, MASTG); targeted pen tests on identity (R2), refunds (R3) and payouts (R6); full VAPT before Phase 2A completion",
+   "skills": "Web, API and mobile penetration testing (OWASP WSTG, MASTG); targeted pen tests on identity (R1), refunds (R3) and payouts (R6); full VAPT before Phase 2A completion",
    "tools": "AI-assisted SAST triage and threat-model drafting; manual testing by the specialist",
-   "pm": 1.75,
-   "peak": 0.5
+   "pm": 2.0,
+   "peak": 0.75
   },
   {
    "group": "spec",
@@ -237,7 +237,7 @@
   "spec": "Specialists"
  },
  "total": [
-  12.0,
+  14.25,
   11.25,
   10.75,
   10.5,
@@ -245,5 +245,5 @@
   10.0,
   2.25
  ],
- "pm": 67.25
+ "pm": 69.5
 }

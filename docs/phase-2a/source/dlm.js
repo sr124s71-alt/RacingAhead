@@ -2,7 +2,7 @@ const L = require('./lib');
 const { P, H1, H1n, H2, H3, B, N, T, C, IMG, SP, BR, cover, contents, build } = L;
 const res = require('./res.json');
 const OUT = process.argv[2];
-const V = { version: 'v2.0 (AI-native release train)', status: 'Issued for client review — supersedes v1.0' };
+const V = { version: 'v2.1 (AI-native release train; Shared Identity in R1)', status: 'Issued for client review — supersedes v2.0' };
 
 const toc = ['1. Purpose and scope', '2. Our understanding of the engagement', '3. Why AI-native, and what it changes', '4. Delivery model at a glance',
   '5. The AI-augmented delivery lifecycle', '6. R1: the 20 October launch', '7. The monthly release train', '8. The AI-native pod', '9. RACI matrix',
@@ -10,7 +10,7 @@ const toc = ['1. Purpose and scope', '2. Our understanding of the engagement', '
   '14. AI governance: security, confidentiality and IP', '15. Knowledge transfer and transition', '16. Change management', '17. Risk management',
   '18. Hypercare, warranty and support', '19. Delivery metrics', '20. Tooling', '21. Commercial alignment', '22. Our commitments to SportSeek'];
 
-const s1 = cover({ title: 'Project Delivery Model', subtitle: 'How Srivin Platforms delivers SportSeek Phase 2A with an AI-native pod: public launch on 20 October 2026, then two features in production every month', docId: 'SRV-SPS-2A-DLM-002', ...V });
+const s1 = cover({ title: 'Project Delivery Model', subtitle: 'How Srivin Platforms delivers SportSeek Phase 2A with an AI-native pod: public launch on 20 October 2026, then an average of two features in production every month', docId: 'SRV-SPS-2A-DLM-002', ...V });
 
 const s2 = [
   ...contents(toc),
@@ -25,7 +25,7 @@ const s2 = [
   H1('3. Why AI-native, and what it changes'),
   ...T([['Conventional delivery', 5], ['Srivin AI-native delivery', 5]], [
     ['Large team; much of the effort goes into writing first-draft code, tests and documents', 'Small senior pod; AI agents produce first drafts, and engineers spend their time on design, review and hard problems'],
-    ['Quarterly-style milestones; value arrives late', '**A release every month, two features each**, from 20 Oct 2026'],
+    ['Quarterly-style milestones; value arrives late', '**A release every month, averaging two features each**, from 20 Oct 2026; Shared Identity live at launch'],
     ['Documentation written at the end, often stale', 'Documentation generated and updated with every change; always current'],
     ['KT as a 2–4 week event after each milestone', 'Continuous KT: SportSeek developers work inside the pod; a signed checklist every release'],
     ['Regression testing grows slower as scope grows', 'AI-generated regression suites grow with every feature and run on every merge']]),
@@ -65,17 +65,18 @@ const s3 = [
     'Generated dependencies and snippets are licence-checked; no code is accepted that the reviewing engineer cannot explain.'], 'num'),
 
   H1('6. R1: the 20 October launch'),
-  P('R1 takes SportSeek public on a hardened, security-tested and monitored Phase 1 product, with **F1 Email notifications** and **F2 Booking & event reminders** on day one.'),
+  P('R1 takes SportSeek public on a hardened, security-tested and monitored Phase 1 product with **F3 Shared Identity** live on day one: one account across the User and Partner apps, OTP-verified account linking and multiple roles on one identity. Because identity touches every login, R1 adds extra identity capacity for October, an identity pen test, and a remote switch that can fall back to the Phase 1 login.'),
   ...T([['Time (IST)', 1.6], ['Activity', 3.6], ['Participants', 3], ['Output', 2.6]], [
     ['09:30 daily', 'Launch stand-up', 'Launch pod, SportSeek PO / tech lead', 'Launch board updated; blockers owned'],
     ['17:00 daily', 'Defect and risk triage', 'Launch Lead, QA, PO', 'Fix / defer / de-scope decisions logged'],
-    ['01 Oct', 'Launch Scope Gate', 'SportSeek PO & sponsor; Srivin lead & architect', 'Frozen scope incl. F1/F2; go-live criteria'],
+    ['01 Oct', 'Launch Scope Gate', 'SportSeek PO & sponsor; Srivin lead & architect', 'Frozen scope incl. F3 scope and fallback; go-live criteria'],
+    ['02 Oct', 'Identity decisions (D22)', 'SportSeek PO; Srivin architect', 'Linking identifiers, roles, KYC fields, user messaging'],
     ['14 Oct', 'Code freeze', 'Launch pod', 'Release candidate; store submissions'],
-    ['19 Oct', 'Go/No-Go', 'SportSeek sponsor (decides), PO, Srivin lead', 'Signed Go/No-Go record'],
+    ['19 Oct', 'Go/No-Go (launch; F3 on/off)', 'SportSeek sponsor (decides), PO, Srivin lead', 'Signed Go/No-Go record'],
     ['20 Oct', 'Launch and war-room', 'Pod on-call; SportSeek ops', 'Live; hourly health reports on launch day']]),
   H2('6.1 Go-live criteria (proposed for the 1 Oct Scope Gate)'),
-  ...N(['No open severity-1/2 defects in launch journeys; AI-generated regression suite green.', 'VAPT of the launch surface with no open critical/high findings (SOW §6.2).', 'Load test passed at SportSeek\'s launch concurrency (D5).',
-    'Monitoring, alerting and on-call live; rollback rehearsed; backup restore verified.', 'Privacy policy, terms and DPDP notice published; store listings approved or in final review.', 'UAT sign-off by SportSeek testers. F1/F2 are included only if they meet the same bar; otherwise they follow within two weeks.'], 'num2'),
+  ...N(['No open severity-1/2 defects in launch journeys; AI-generated regression suite green.', 'VAPT of the launch surface and targeted identity pen test with no open critical/high findings (SOW §6.2).', 'Load test passed at SportSeek\'s launch concurrency (D5), including login and OTP flows.',
+    'Monitoring, alerting and on-call live; rollback rehearsed; backup restore verified.', 'Privacy policy, terms and DPDP notice published; store listings approved or in final review.', 'UAT sign-off by SportSeek testers, including account-linking scenarios.', 'F3 is switched on only if it meets all of the above. Otherwise SportSeek launches on the Phase 1 login and F3 follows in a fast-follow.'], 'num2'),
 
   H1('7. The monthly release train'),
   ...T([['Week', 1], ['Pod', 4.5], ['SportSeek', 3], ['Gate', 2]], [
@@ -86,7 +87,7 @@ const s3 = [
     ['Release week', 'Release Tuesday; one week of hypercare', 'KT checklist sign-off', 'KT signed']]),
   H2('7.1 Ceremonies'),
   ...T([['Ceremony', 2], ['When', 2], ['Time-box', 1.2], ['Participants', 2.6], ['Output', 2.6]], [
-    ['Train planning', 'Monday, week 1', '1.5 h', 'Pod, PO', 'Train goal: the two features, with acceptance criteria'],
+    ['Train planning', 'Monday, week 1', '1.5 h', 'Pod, PO', 'Train goal: the release\'s features, with acceptance criteria'],
     ['Daily stand-up', 'Daily 09:30', '15 min', 'Pod incl. SportSeek developers', 'Blockers raised and owned'],
     ['Weekly demo', 'Every Friday', '45 min', 'Pod, PO, SportSeek stakeholders', 'Working software shown; feedback into backlog'],
     ['Spec & design review', 'Weekly (Thu)', '1 h', 'Analyst, designer, architect, PO', 'Next train\'s specs and UI approved'],
@@ -98,7 +99,7 @@ const s3 = [
     ['Done (release)', 'Full regression green; targeted pen test where applicable; UAT signed; release notes and runbook updated; deployed via the pipeline into SportSeek infrastructure (SOW §14).']], { size: 17 }),
 
   H1('8. The AI-native pod'),
-  P(`One cross-functional pod of about 10–11 people, all senior enough to judge AI output. Total planned effort is ${res.pm} person-months, against 154 in our conventional estimate for the same scope. Roles, skills and monthly loading are in the WBS & Integrated Project Plan, Section 14.`),
+  P(`One cross-functional pod of about 10–11 people (about 14 in launch month, with extra identity capacity), all senior enough to judge AI output. Total planned effort is ${res.pm} person-months, against 154 in our conventional estimate for the same scope. Roles, skills and monthly loading are in the WBS & Integrated Project Plan, Section 14.`),
   ...T([['Role', 2.6], ['Accountability in the AI-native model', 7.4]], [
     ['Delivery Lead / TPM', 'Runs the release train; owns plan, RAID, dependencies, decisions log and AI governance; single point of accountability.'],
     ['Solution Architect & AI Engineering Lead', 'Architecture and ADRs; owns the AI engineering playbook (spec templates, context and prompt standards, agent guardrails, review rules); second reviewer on security-sensitive code.'],
@@ -108,7 +109,7 @@ const s3 = [
     ['Senior React Native / React Engineers', 'Direct agents on mobile and web; own device testing, performance, accessibility and store releases.'],
     ['QA Automation Engineer', 'Curates AI-generated test suites; owns quality gates; exploratory testing; UAT support.'],
     ['DevOps / SRE', 'Pipelines, environments, observability, releases, on-call.'],
-    ['Security & Performance Engineers (on demand)', 'Targeted pen tests (R2, R3, R6) and full VAPT (R6); load tests (R1, R5, R6).']]),
+    ['Security & Performance Engineers (on demand)', 'Targeted pen tests (R1 identity, R3 refunds, R6 payouts) and full VAPT (R6); load tests (R1, R5, R6).']]),
   H2('8.1 SportSeek inside the pod'),
   ...B(['**2 SportSeek developers recommended** (D9) join from R2 as full pod members, working with the same AI tooling. They learn the AI-native way of working as well as the code.',
     '**Product Owner** approves specs and accepts features weekly; **UAT testers** test in the hardening week of each release.',
@@ -157,7 +158,7 @@ const s3 = [
     ['Unit', 'Domain logic and edge cases', 'Generated with code from the spec; reviewed', 'Every commit'],
     ['API / integration', 'Endpoints, DB (Testcontainers), adapters', 'Generated from OpenAPI contracts', 'Every merge'],
     ['Regression', 'All live journeys, mobile and web', 'Suite generated from journey inventory; grows each release', 'Nightly + pre-release'],
-    ['Security', 'SAST/SCA/secrets in CI; DAST; manual pen tests', 'AI triage of scanner findings', 'CI + R1, R2, R3, R6'],
+    ['Security', 'SAST/SCA/secrets in CI; DAST; manual pen tests', 'AI triage of scanner findings', 'CI + R1 (incl. identity), R3, R6'],
     ['Performance', 'Load at SportSeek targets (D20)', 'Scripts generated from API catalogue', 'R1, R5, R6'],
     ['UAT', 'Business scenarios', 'Scenario scripts drafted from specs', 'Hardening week']], { size: 17 }),
   ...T([['Severity', 1.3], ['Definition', 5.2], ['Example', 3.5]], [
@@ -170,7 +171,7 @@ const s3 = [
   ...B(['**Dev / Staging / Production** in SportSeek accounts. Agents and engineers work in Dev; Staging holds synthetic or masked data only; Production changes go only through the pipeline.',
     '**Continuous delivery behind flags**: back-end changes deploy when ready and stay dark until the release; mobile ships on the monthly train via store submission in week 4.',
     '**Rollback**: expand/contract database migrations and flag kill-switches make every release reversible.',
-    '**Minimum-version enforcement** on the apps, so API changes (e.g. identity in R2) never strand old clients.']),
+    '**Minimum-version enforcement** on the apps, so API changes (e.g. identity in R1) never strand old clients.']),
 
   H1('14. AI governance: security, confidentiality and IP'),
   ...T([['Control', 2.6], ['How it works', 7.4]], [
@@ -195,7 +196,8 @@ const s3 = [
   H1('17. Risk management'),
   ...T([['#', 0.5], ['Risk', 3.4], ['P / I', 0.9], ['Mitigation', 4.3], ['Owner', 1]], [
     ['R1', 'AI tooling not approved by SportSeek on day one', 'L-M / H', 'Enterprise-terms tools; written AI policy at kick-off; fallback plan at conventional pace', 'Delivery Lead'],
-    ['R2', 'Launch blockers found late in Phase 1', 'M / H', 'AI-assisted assessment in 3 days; Scope Gate; F1/F2 de-scoped before launch is risked', 'Delivery Lead'],
+    ['R2', 'Launch blockers found late in Phase 1', 'M / H', 'AI-assisted assessment in 3 days; Scope Gate; hardening prioritised over F3', 'Delivery Lead'],
+    ['R2a', 'F3 Shared Identity not ready or not clean by 19 Oct (7 working days of build)', 'H / H', 'Tight F3 scope; identity decisions by 2 Oct; +2 engineers in October; identity pen test; remote switch with fallback to Phase 1 login', 'Architect'],
     ['R3', 'SportSeek decision/approval pace lags the monthly train', 'M / H', '1-day decision and 2-day UI approval agreement; weekly decision log; affected feature moves, not the release', 'SportSeek PO'],
     ['R4', 'Quality or security issues in AI-generated code', 'L-M / H', 'Human review, dual review on sensitive code, full gates, targeted pen tests', 'Architect'],
     ['R5', 'Over-reliance on AI erodes team understanding', 'L / M', 'Engineers must explain every merge; SportSeek developers in the pod; living docs', 'Architect'],
@@ -234,12 +236,12 @@ const s3 = [
 
   H1('21. Commercial alignment'),
   P('The release train also offers a simpler commercial shape, for inclusion in the proposal the SOW requests:'),
-  ...B(['**Price per release**: a fixed fee for each monthly release (two features), invoiced on UAT sign-off. SportSeek pays for delivered, accepted features and can approve costs one release at a time, as the SOW Next Steps ask.',
+  ...B(['**Price per release**: a fixed fee for each monthly release, sized to its features, invoiced on UAT sign-off. SportSeek pays for delivered, accepted features and can approve costs one release at a time, as the SOW Next Steps ask.',
     '**Launch (R1)** priced separately as a fixed-scope hardening engagement.', '**Optional continuation** into Phase 2B on the same train from April 2027, at the same per-release structure.',
     'Rates, payment terms and any outcome-linked elements will be in the commercial proposal.']),
 
   H1('22. Our commitments to SportSeek'),
-  ...N(['**Public on 20 Oct 2026**, with two new features on day one.', '**Two features in production every month**, on fixed release dates, to Phase 2A completion on **23 Mar 2027**.',
+  ...N(['**Public on 20 Oct 2026 with Shared Identity live**, with a safe fallback to the Phase 1 login.', '**New features in production every month** (12 features in 6 releases), on fixed release dates, to Phase 2A completion on **23 Mar 2027**.',
     `**A lean senior pod** (${res.pm} person-months, less than half the conventional estimate), with every AI output reviewed and owned by a named engineer.`, '**Transparency**: weekly working software, monthly metrics including AI usage.',
     '**Ownership**: SportSeek\'s accounts, code, docs and AI artefacts; SportSeek developers able to run the train themselves.'], 'num3'),
 ];

@@ -36,15 +36,15 @@ def gantt(ids,fn,title,xmin,xmax,major,fmt,h=None,mlabels=True):
     ax.set_title(title,loc='left',fontsize=10.5,fontweight='bold',color='#0b0b0b',pad=18)
     plt.tight_layout(); plt.savefig(fn,facecolor='white'); plt.close()
 
-launch=['2.1','2.2','2.3','2.4','2.5','2.6','2.7','2.8','2.9','2.10','2.11','2.12','2.13','2.14','2.15','2.16','2.17','3.1','3.2','3.3','3.5']
-gantt(launch,'gantt_launch.png','Release R1 — day-level plan to the 20 October 2026 public launch (with F1, F2)',dt.datetime(2026,9,28),dt.datetime(2026,11,9),md.WeekdayLocator(byweekday=md.MO),'%d %b')
-road=['2.16','2.17','3.2','3.3','3.4','3.5','3.7','4.1','4.3','4.4','5.1','5.2','5.3','5.4','6.1','6.2','6.3','6.4','6.5','7.1','7.2','7.3','7.4','8.1','8.2','8.3','8.4','9.1','9.2','9.3','9.4','9.5','9.7','9.9']
+launch=['2.1','2.2','2.3','2.4','2.5','2.6','2.7','2.8','2.9','2.10','2.11','2.12','2.13','2.14','2.15','2.16','2.17','2.18','2.19','2.20','3.2','3.3','3.5']
+gantt(launch,'gantt_launch.png','Release R1 — day-level plan to the 20 Oct 2026 launch, incl. F3 Shared Identity',dt.datetime(2026,9,28),dt.datetime(2026,11,9),md.WeekdayLocator(byweekday=md.MO),'%d %b')
+road=['2.6','2.7','2.8','2.19','2.20','3.2','3.3','3.4','3.5','3.7','4.1','4.3','4.4','5.1','5.2','5.3','5.4','5.5','5.6','6.1','6.2','6.3','6.4','7.1','7.2','7.3','7.4','8.1','8.2','8.3','8.4','9.1','9.2','9.3','9.4','9.5','9.7','9.9']
 gantt(road,'gantt_roadmap.png','Phase 2A monthly release train — Oct 2026 to Apr 2027',dt.datetime(2026,9,28),dt.datetime(2027,4,12),md.MonthLocator(),'%b %y')
 
 # Release train figure
 fig,ax=plt.subplots(figsize=(11.5,3.9),dpi=200); ax.set_xlim(0,120); ax.set_ylim(0,40); ax.axis('off')
-rel=[('R1','20 Oct 2026','Public launch','F1 Email notifications','F2 Booking & event reminders','#eb6834'),
-     ('R2','24 Nov 2026','','F3 Shared identity & account linking','F4 Push notifications & preferences','#2a78d6'),
+rel=[('R1','20 Oct 2026','Public launch','F3 Shared identity & account linking','Hardened, security- and load-tested Phase 1','#eb6834'),
+     ('R2','24 Nov 2026','','F1 Email + F2 Reminders','F4 Push notifications & preferences','#2a78d6'),
      ('R3','22 Dec 2026','','F5 Cancellation & refunds','F6 Web app — players','#e87ba4'),
      ('R4','27 Jan 2027','','F7 Partner model: coach, physio, nutritionist','F8 Waitlist & edit alerts','#eda100'),
      ('R5','23 Feb 2027','','F9 Transaction Ledger','F10 Web app — organisers & partners','#008300'),
@@ -61,7 +61,7 @@ for i,(r,d,tag,f1,f2,c) in enumerate(rel):
     import textwrap
     ax.text(x+1,19.5,'\n'.join(textwrap.wrap(f1,21)),fontsize=7.4,va='top',color='#0b0b0b')
     ax.text(x+1,12.2,'\n'.join(textwrap.wrap(f2,21)),fontsize=7.4,va='top',color='#0b0b0b')
-ax.text(2,1.5,'Fixed dates, flexible scope: a feature that is not release-ready rides the next train behind a feature flag. It never delays the train.',fontsize=7.8,color='#52514e')
+ax.text(2,1.5,'Fixed dates, flexible scope: a feature that is not release-ready rides the next train behind a feature flag. F3 ships in R1 behind a remote switch with fallback to Phase 1 login.',fontsize=7.8,color='#52514e')
 plt.savefig('release_train.png',bbox_inches='tight',facecolor='white'); plt.close()
 
 # Architecture diagram
@@ -100,13 +100,13 @@ plt.savefig('architecture.png',bbox_inches='tight',facecolor='white'); plt.close
 
 # Critical path flow
 fig,ax=plt.subplots(figsize=(12,2.6),dpi=200); ax.set_xlim(0,110); ax.set_ylim(0,26); ax.axis('off')
-cp=[('Access &\nAI approval\n29 Sep','#8a8984'),('R1 launch\n20 Oct','#eb6834'),('HLD & design\nsign-off\n23 Oct','#4a3aa7'),('R2 Identity\n24 Nov','#2a78d6'),('R3 Refunds\n+ Web v1\n22 Dec','#e87ba4'),('R4 Partner\nmodel\n27 Jan','#eda100'),('R5 Ledger\n+ Web v2\n23 Feb','#008300'),('R6 Route +\nWhatsApp\n23 Mar','#4a3aa7'),('Phase 2A\naccepted\n2 Apr 2027','#0b0b0b')]
+cp=[('Access &\nAI approval\n29 Sep','#8a8984'),('Identity\ndecisions\n2 Oct','#4a3aa7'),('R1 launch +\nF3 Identity\n20 Oct','#eb6834'),('R2 Notifications\n+ merge\n24 Nov','#2a78d6'),('R3 Refunds\n+ Web v1\n22 Dec','#e87ba4'),('R4 Partner\nmodel\n27 Jan','#eda100'),('R5 Ledger\n+ Web v2\n23 Feb','#008300'),('R6 Route +\nWhatsApp\n23 Mar','#4a3aa7'),('Phase 2A\naccepted\n2 Apr 2027','#0b0b0b')]
 w=11.3
 for i,(t,c) in enumerate(cp):
     x=0.5+i*12.25
     ax.add_patch(FancyBboxPatch((x,8),w,11,boxstyle='round,pad=0.2,rounding_size=1.2',fc=c,ec='white'))
     ax.text(x+w/2,13.5,t,ha='center',va='center',fontsize=6.9,color='white',fontweight='bold')
     if i: ax.annotate('',xy=(x-0.2,13.5),xytext=(x-1.7,13.5),arrowprops=dict(arrowstyle='->',color='#0b0b0b',lw=1))
-ax.text(1,2.2,'Each release builds on the one before: identity → refunds → partner model → ledger → payouts. External gates on the path: D21 AI approval (29 Sep), D11 refund policy (13 Nov),\nD18 merge rules (20 Nov), D10 Route confirmation (6 Nov), D13 WhatsApp templates (5 Feb).',fontsize=7.4,color='#52514e')
+ax.text(1,2.2,'Each release builds on the one before: identity → notifications and merge → refunds → partner model → ledger → payouts. External gates on the path: D21 AI approval (29 Sep),\nD22 identity decisions (2 Oct), D18 merge rules (30 Oct), D10 Route confirmation (6 Nov), D11 refund policy (13 Nov), D13 WhatsApp templates (5 Feb).',fontsize=7.4,color='#52514e')
 plt.savefig('critical_path.png',bbox_inches='tight',facecolor='white'); plt.close()
 print('done')

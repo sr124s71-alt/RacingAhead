@@ -9,14 +9,14 @@ Prepared by Srivin Platforms for RacingAhead / SportSeek (v1.0, 27 Sep 2026). Ba
 | 02 | Project Delivery Model: lifecycle, agile cadence, governance, quality, release, change, risk, KT, support | `02_Project_Delivery_Model.docx` / `.pdf` |
 | 03 | Technical Approach: architecture, per-module design, NFRs, engineering practices, launch plan | `03_Technical_Approach.docx` / `.pdf` |
 
-## Delivery model (v2.0): AI-native release train
+## Delivery model (v2.1): AI-native release train, Shared Identity at launch
 
-A lean, senior AI-native pod (about 10-11 FTE, 67.25 person-months) ships **2 features to production every month** from the public launch. Phase 2A is complete on **23 Mar 2027**.
+A lean, senior AI-native pod (about 10-11 FTE; 14.25 in launch month; 69.5 person-months) ships new features to production every month (12 features in 6 releases) from the public launch. Phase 2A is complete on **23 Mar 2027**.
 
 | Release | Go-live | Features |
 |---|---|---|
-| R1 | **Tue 20 Oct 2026** | Public launch + F1 Email notifications + F2 Booking & event reminders |
-| R2 | Tue 24 Nov 2026 | F3 Shared identity & account linking + F4 Push & preferences |
+| R1 | **Tue 20 Oct 2026** | Public launch + **F3 Shared identity & account linking** (remote switch with fallback to Phase 1 login) |
+| R2 | Tue 24 Nov 2026 | F1 Email + F2 Reminders + F4 Push & preferences; merge of existing duplicate accounts |
 | R3 | Tue 22 Dec 2026 | F5 Cancellation & refunds + F6 Web app (players) |
 | R4 | Wed 27 Jan 2027 | F7 Generalised partner model + F8 Waitlist & edit alerts |
 | R5 | Tue 23 Feb 2027 | F9 Transaction Ledger + F10 Web app (organisers & partners) |
