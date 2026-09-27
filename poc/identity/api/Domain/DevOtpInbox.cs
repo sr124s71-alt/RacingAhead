@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 
 namespace SportSeek.Identity.Api.Domain;
 
-public sealed record DevOtpMessage(DateTimeOffset At, string Channel, string To, string Client, string Code, string Text);
+public sealed record DevOtpMessage(DateTimeOffset At, Guid ChallengeId, string Channel, string To, string Client, string Code, string Text);
 
 /// <summary>
 /// POC stand-in for the SMS/email provider: OTPs are held in memory and shown in the apps' "Dev SMS

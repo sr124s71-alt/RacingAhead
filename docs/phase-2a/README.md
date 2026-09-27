@@ -24,6 +24,10 @@ A lean, senior AI-native pod (about 10-11 FTE; 14.25 in launch month; 69.5 perso
 
 Stack: React Native (mobile), .NET / ASP.NET Core (back end), PostgreSQL; React + Next.js proposed for web.
 
+## F3 Shared Identity proof of concept
+
+A working POC of F3 (Section 6.1 of the Technical Approach) on the same stack, with an automated account-linking acceptance suite and a 10-minute demo script: see [`poc/identity`](../../poc/identity/README.md).
+
 ## Regenerating
 
 `source/` holds the generators. `plan.json` (built by `data.py`) is the single source for every date in all documents.

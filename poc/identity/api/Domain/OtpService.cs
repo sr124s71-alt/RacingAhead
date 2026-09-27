@@ -61,7 +61,7 @@ public class OtpService(IdentityDb db, AuditLog audit, DevOtpInbox inbox, IConfi
         if (env.IsDevelopment())
         {
             var text = $"{code} is your SportSeek verification code for {client.DisplayName}. It expires in {_o.TtlMinutes} min. Do not share it.";
-            inbox.Add(new DevOtpMessage(now, id.Type, id.Value, client.ClientId, code, text));
+            inbox.Add(new DevOtpMessage(now, challenge.Id, id.Type, id.Value, client.ClientId, code, text));
             log.LogInformation("[DEV {Channel}] to {To}: {Text}", id.Type.ToUpperInvariant(), id.Value, text);
         }
 

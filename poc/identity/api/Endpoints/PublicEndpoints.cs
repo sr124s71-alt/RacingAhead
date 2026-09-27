@@ -55,7 +55,7 @@ public static class PublicEndpoints
             {
                 scenario = "link";
                 message = $"This {label} already has a SportSeek account. Enter the code sent to {id.Masked} to prove it's yours, " +
-                          $"and we'll add {role} to that same account. No new account is created.";
+                          $"and we'll add {Roles.Label(role)} to that same account. No new account is created.";
             }
 
             return Results.Ok(new

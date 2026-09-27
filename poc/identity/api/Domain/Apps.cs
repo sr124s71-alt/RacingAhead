@@ -11,6 +11,13 @@ public static class Roles
     public const string Admin = "Admin";
 
     public static readonly string[] All = [Player, EventOrganiser, FacilityPartner, Coach, Physio, Nutritionist, Admin];
+
+    public static string Label(string role) => role switch
+    {
+        EventOrganiser => "Event Organiser",
+        FacilityPartner => "Facility Partner",
+        _ => role,
+    };
 }
 
 /// <summary>
