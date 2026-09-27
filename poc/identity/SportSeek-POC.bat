@@ -2,7 +2,8 @@
 rem ==========================================================================
 rem  SportSeek Shared Identity POC - desktop launcher
 rem
-rem  Put this ONE file on your desktop and double-click it. It:
+rem  Set up with one command (see README) that clones the repo and puts a shortcut to this
+rem  file on your desktop, or copy this file to your desktop. Double-click it. It:
 rem    1. clones the POC from GitHub the first time (needs Git and access to the repo)
 rem    2. updates it to the latest version from GitHub every time after that
 rem    3. asks for your PostgreSQL user and password once, and remembers them for you only
@@ -16,6 +17,14 @@ rem
 rem  The downloaded copy (%USERPROFILE%\SportSeek-POC) is managed by this launcher:
 rem  local edits there are replaced by the GitHub version on the next update.
 rem ==========================================================================
+rem Run from a temporary copy: the update below can replace this very file, and cmd reads a
+rem batch file while it runs.
+if /i "%~1"=="/fromcopy" goto :fromcopy
+copy /y "%~f0" "%TEMP%\SportSeek-POC-launcher.bat" >nul 2>nul || goto :main
+"%TEMP%\SportSeek-POC-launcher.bat" /fromcopy %*
+:fromcopy
+shift
+:main
 setlocal EnableExtensions DisableDelayedExpansion
 title SportSeek Identity POC
 

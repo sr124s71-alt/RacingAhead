@@ -62,9 +62,17 @@ flowchart LR
 
 ### Easiest: the desktop launcher (for everyone on the team)
 
-Each person copies **one file**, [`SportSeek-POC.bat`](SportSeek-POC.bat), to their desktop and double-clicks it. Everything else comes from GitHub:
+**One-time setup per person.** Paste this into Command Prompt. It clones the repository and puts a **SportSeek POC** shortcut on the desktop:
 
-1. The first run clones this repository (branch `claude/busy-hopper-sbfu76`) into `%USERPROFILE%\SportSeek-POC\RacingAhead`. Every run after that updates it to the latest commit, so everyone runs the same version.
+```
+git clone -b claude/busy-hopper-sbfu76 https://github.com/sr124s71-alt/RacingAhead.git "%USERPROFILE%\SportSeek-POC\RacingAhead" && "%USERPROFILE%\SportSeek-POC\RacingAhead\poc\identity\scripts\create-desktop-shortcut.bat"
+```
+
+After that, double-click the shortcut. Because nothing is downloaded through a browser, Windows Smart App Control and SmartScreen don't block it. If you downloaded `SportSeek-POC.bat` through a browser instead and Windows blocks it, right-click it → **Properties** → tick **Unblock** → **OK**. Don't turn Smart App Control off: it can't be turned back on without reinstalling Windows.
+
+The shortcut runs [`SportSeek-POC.bat`](SportSeek-POC.bat) (from a temporary copy, so it can update itself safely). Everything comes from GitHub:
+
+1. Every run updates `%USERPROFILE%\SportSeek-POC\RacingAhead` to the latest commit of `claude/busy-hopper-sbfu76`, so everyone runs the same version, including the latest launcher. (Run from anywhere else, it clones the repository there on its first run.)
 2. It asks once for your PostgreSQL user, password and port, and saves them in `%USERPROFILE%\SportSeek-POC\postgres-settings.cmd`, which is yours only and never in git. They reach the API through the `ConnectionStrings__Identity` environment variable, so nobody edits `appsettings.json`.
 3. It runs `start-all.bat` from the downloaded copy (below).
 
