@@ -10,7 +10,7 @@ rem
 rem  Each service runs in its own window and restarts automatically if it
 rem  stops. Close a window (or run stop-all.bat) to stop it for good.
 rem ==========================================================================
-setlocal EnableExtensions
+setlocal EnableExtensions DisableDelayedExpansion
 title SportSeek Identity POC - launcher
 set "ROOT=%~dp0"
 set "NOBROWSER="

@@ -60,9 +60,21 @@ flowchart LR
 
 ## Run it locally
 
+### Easiest: the desktop launcher (for everyone on the team)
+
+Each person copies **one file**, [`SportSeek-POC.bat`](SportSeek-POC.bat), to their desktop and double-clicks it. Everything else comes from GitHub:
+
+1. The first run clones this repository (branch `claude/busy-hopper-sbfu76`) into `%USERPROFILE%\SportSeek-POC\RacingAhead`. Every run after that updates it to the latest commit, so everyone runs the same version.
+2. It asks once for your PostgreSQL user, password and port, and saves them in `%USERPROFILE%\SportSeek-POC\postgres-settings.cmd`, which is yours only and never in git. They reach the API through the `ConnectionStrings__Identity` environment variable, so nobody edits `appsettings.json`.
+3. It runs `start-all.bat` from the downloaded copy (below).
+
+Options: `/config` re-enters the PostgreSQL details, `/stop` stops everything, and `/noexpo`, `/nobrowser` and `/min` are passed on to `start-all.bat`.
+
+Each person needs Git (`winget install --id Git.Git -e`), the .NET 8 SDK, Node.js 20+ and PostgreSQL. If the repository is private, they also need access to it, and Git asks them to sign in to GitHub on the first run. The downloaded copy is managed by the launcher: local edits there are replaced on the next update. When this branch is merged, change `BRANCH` at the top of the launcher to `main`.
+
 ### Quick start: one file starts everything
 
-After the prerequisites below and the connection string in step 1:
+From a clone of the repository, after the prerequisites below and the connection string in step 1:
 
 | | Windows | macOS / Linux |
 |---|---|---|
@@ -209,6 +221,7 @@ The Admin Portal can never self-register or grant itself Admin, and a password s
 
 ```
 poc/identity/
+├── SportSeek-POC.bat             desktop launcher: clone/update from GitHub, then start-all.bat
 ├── start-all.bat / start-all.sh  start everything, restart on failure (stop-all.* to stop)
 ├── scripts/                      run-forever.bat, install/remove-autostart.bat
 ├── SportSeek.Identity.sln

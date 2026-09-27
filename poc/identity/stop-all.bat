@@ -1,6 +1,6 @@
 @echo off
 rem Stops every service started by start-all.bat (the windows and their restart loops).
-setlocal EnableExtensions
+setlocal EnableExtensions DisableDelayedExpansion
 echo Stopping the SportSeek Identity POC...
 for %%T in ("SportSeek - Identity API" "SportSeek - Web app" "SportSeek - Expo app") do (
   taskkill /FI "WINDOWTITLE eq %%~T*" /T /F >nul 2>nul && echo   stopped %%~T
