@@ -28,9 +28,28 @@ echo  SportSeek Shared Identity POC
 echo  -----------------------------
 echo.
 echo Checking prerequisites...
-where dotnet >nul 2>nul || (echo [X] The .NET SDK was not found. Install the .NET 8 SDK and run this again. & goto :fail)
-where node >nul 2>nul || (echo [X] Node.js was not found. Install Node.js 20 or later and run this again. & goto :fail)
-echo [ok] .NET SDK and Node.js
+where dotnet >nul 2>nul || goto :nodotnet
+dotnet --list-sdks 2>nul | findstr /b "8." >nul || goto :nodotnet
+where node >nul 2>nul || goto :nonode
+echo [ok] .NET 8 SDK and Node.js
+goto :prereqok
+:nodotnet
+echo [X] The .NET 8 SDK was not found. Install it with this command, or from
+echo     https://dotnet.microsoft.com/download/dotnet/8.0 (choose SDK, Windows x64):
+echo.
+echo       winget install --id Microsoft.DotNet.SDK.8 -e
+echo.
+echo     Then close this window and start again. If it is still not found, sign out of
+echo     Windows and back in.
+goto :fail
+:nonode
+echo [X] Node.js was not found. Install it with this command, or from https://nodejs.org (LTS):
+echo.
+echo       winget install --id OpenJS.NodeJS.LTS -e
+echo.
+echo     Then close this window and start again.
+goto :fail
+:prereqok
 
 call :portopen 5432 && goto :pgok
 echo PostgreSQL is not answering on port 5432. Trying to start its Windows service...
