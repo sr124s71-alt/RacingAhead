@@ -111,9 +111,20 @@ $env:EXPO_PUBLIC_API_URL="http://<your-laptop-LAN-IP>:5080"; npx expo start
 
 Allow port 5080 through the laptop firewall. The app opens on a launcher where you pick User App, Partner App or Admin Portal.
 
-### Shareable prototype (no server)
+### Web front end (Lit) and the shareable prototype
 
-`npm run build:proto` (in `app/`) builds a static web version where the Identity API runs in the browser (`app/src/mock/server.ts`, a port of the .NET linking, OTP and bootstrap rules). It opens straight on the demo stage, switches to tabs at phone width, and keeps each viewer's test data on their own device. Use it to share a clickable link; use the real API for the actual demo.
+`web-lit/` is a Lit web-components front end for the same three apps: User and Partner apps in phone frames and the Admin Portal in a browser window, on one demo stage. Below 1180px wide it switches to tabs, so it works on a phone. It has two builds:
+
+```bash
+cd poc/identity/web-lit
+npm install
+npm run build:proto   # dist/proto: shareable prototype, the Identity API runs in the browser (no server)
+npm run serve         # dist/live on http://localhost:8082, talking to the .NET API on :5080
+```
+
+The prototype uses `app/src/mock/server.ts`, a browser port of the .NET linking, OTP and bootstrap rules. Each viewer's test data stays on their own device. Use it to share a clickable link, and use the live build against the real API for the actual demo.
+
+The Expo app (`app/`) also has a prototype build (`npm run build:proto` there), kept for the React Native story.
 
 ### 4. Run the acceptance tests
 
@@ -186,6 +197,7 @@ poc/identity/
 │   └── Endpoints/                token, OTP, me, admin, Phase 1 login, min-version middleware
 ├── tests/                        xUnit acceptance tests (real PostgreSQL)
 ├── app/                          React Native (Expo) – User App, Partner App, Admin Portal
+├── web-lit/                      Lit web front end: demo stage, prototype and live builds
 │   ├── App.tsx                   variant routing, demo stage, config polling
 │   └── src/                      API client, screens, Dev SMS inbox, UI kit
 └── docs/screenshots/

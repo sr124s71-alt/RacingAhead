@@ -1,0 +1,18 @@
+{
+  "name": "sportseek-identity-web-lit",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Lit web front end for the F3 Shared Identity POC (prototype and live-API builds)",
+  "scripts": {
+    "build:proto": "node build.mjs proto",
+    "build:live": "node build.mjs live",
+    "serve": "node build.mjs live --serve"
+  },
+  "dependencies": {
+    "lit": "^3.3.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}
