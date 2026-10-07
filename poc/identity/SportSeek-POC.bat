@@ -38,12 +38,14 @@ set "SETTINGS=%HOME_DIR%\postgres-settings.cmd"
 
 set "MODE=start"
 set "PASS_ON="
-:args
-if "%~1"=="" goto :argsdone
+set "ORIG_ARGS="
+:collectargs
+if "%~1"=="" goto :collected
+set "ORIG_ARGS=%ORIG_ARGS% %1"
 if /i "%~1"=="/config" (set "MODE=config") else if /i "%~1"=="/stop" (set "MODE=stop") else set "PASS_ON=%PASS_ON% %~1"
 shift
-goto :args
-:argsdone
+goto :collectargs
+:collected
 
 echo.
 echo  SportSeek Shared Identity POC
@@ -80,6 +82,15 @@ echo [ok] Up to date with %BRANCH%
 goto :codeready
 :offline
 echo [!] Could not update from GitHub. Starting the copy you already have.
+
+rem If the update brought a newer launcher, hand over to it now. This run started from a copy
+rem made before the update, and an older launcher must not drive newer scripts.
+if not exist "%POC%\SportSeek-POC.bat" goto :codeready
+fc /b "%~f0" "%POC%\SportSeek-POC.bat" >nul 2>nul && goto :codeready
+if /i "%~nx0"=="SportSeek-POC-launcher-new.bat" goto :codeready
+echo [ok] The launcher itself was updated. Restarting with the new version...
+copy /y "%POC%\SportSeek-POC.bat" "%TEMP%\SportSeek-POC-launcher-new.bat" >nul 2>nul || goto :codeready
+endlocal & "%TEMP%\SportSeek-POC-launcher-new.bat" /fromcopy %ORIG_ARGS%
 
 :codeready
 for /f "delims=" %%C in ('git -C "%CHECKOUT%" log -1 "--format=%%h %%s"') do echo     Version: %%C
