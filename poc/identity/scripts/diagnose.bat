@@ -35,7 +35,7 @@ echo --- npm --version
 call npm --version 2>&1
 echo.
 echo ===== Ports (open = something is listening)
-for %%P in (5432 5080 8082 8081) do call :port %%P
+for %%P in (5432 5440 5080 8082 8081) do call :port %%P
 echo.
 echo ===== Web checks
 call :http http://127.0.0.1:5080/api/config
@@ -46,6 +46,7 @@ call :http http://127.0.0.1:8081/
 echo.
 echo ===== Service windows
 tasklist /v /fi "WINDOWTITLE eq SportSeek*" 2>&1
+if exist "%USERPROFILE%\SportSeek-POC\private-postgres\initdb.log" (echo --- private database setup log & type "%USERPROFILE%\SportSeek-POC\private-postgres\initdb.log")
 echo.
 echo ===== Packages installed
 if exist "%POC%\web-lit\node_modules" (echo web-lit: yes) else (echo web-lit: NO - npm install did not complete)
@@ -56,6 +57,16 @@ if exist "%OUTDIR%\postgres-settings.cmd" (
   call "%OUTDIR%\postgres-settings.cmd"
 ) else (
   echo No saved settings: run the SportSeek POC shortcut first.
+)
+if /i "%PG_MODE%"=="private" (
+  set "PG_USER=postgres"
+  set "PG_PASSWORD=sportseek-poc-local"
+  set "PG_PORT=5440"
+  echo Database: the POC's private PostgreSQL, %USERPROFILE%\SportSeek-POC\private-postgres
+  if exist "%USERPROFILE%\SportSeek-POC\private-postgres\pgsql\bin\postgres.exe" (echo   binaries: yes) else (echo   binaries: NO - not downloaded yet)
+  if exist "%USERPROFILE%\SportSeek-POC\private-postgres\data\PG_VERSION" (echo   data folder: yes) else (echo   data folder: NO - not created yet)
+) else (
+  echo Database: PostgreSQL installed on this PC
 )
 if not defined PG_PORT set "PG_PORT=5432"
 if defined PG_PASSWORD (echo user=%PG_USER%  port=%PG_PORT%  password: set, hidden) else (echo user=%PG_USER%  port=%PG_PORT%  password: NOT SET)

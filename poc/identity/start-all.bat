@@ -51,16 +51,35 @@ echo     Then close this window and start again.
 goto :fail
 :prereqok
 
-call :portopen 5432 && goto :pgok
-echo PostgreSQL is not answering on port 5432. Trying to start its Windows service...
+if not defined PG_PORT set "PG_PORT=5432"
+if /i "%PG_MODE%"=="private" goto :privatepg
+
+call :portopen %PG_PORT% && goto :pgok
+echo PostgreSQL is not answering on port %PG_PORT%. Trying to start its Windows service...
 powershell -NoProfile -Command "Get-Service -Name 'postgresql*' -ErrorAction SilentlyContinue | Where-Object Status -ne 'Running' | Start-Service -ErrorAction SilentlyContinue"
 call :sleep 5
-call :portopen 5432 && goto :pgok
-echo [X] PostgreSQL is not running on localhost:5432.
-echo     Start it from Services (services.msc), or run this file once as administrator.
+call :portopen %PG_PORT% && goto :pgok
+echo [X] PostgreSQL is not running on localhost:%PG_PORT%.
+echo     Start it from Services (services.msc), or use the POC's private database instead:
+echo     run SportSeek-POC.bat /config and choose 1.
 goto :fail
+
+:privatepg
+rem The POC's own PostgreSQL (set up by scripts\private-db.bat) runs in its own window.
+call :launch %PG_PORT% "SportSeek - Database" db
+set /a TRIES=0
+:waitpg
+call :portopen %PG_PORT% && goto :pgok
+set /a TRIES+=1
+if %TRIES% geq 60 (
+  echo [X] The private database did not start. Check the "SportSeek - Database" window.
+  goto :fail
+)
+call :sleep 1
+goto :waitpg
+
 :pgok
-echo [ok] PostgreSQL
+echo [ok] PostgreSQL on port %PG_PORT%
 
 if not exist "%ROOT%web-lit\node_modules" (
   echo Installing web app packages - first run only...

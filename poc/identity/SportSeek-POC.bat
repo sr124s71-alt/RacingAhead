@@ -6,11 +6,11 @@ rem  Set up with one command (see README) that clones the repo and puts a shortc
 rem  file on your desktop, or copy this file to your desktop. Double-click it. It:
 rem    1. clones the POC from GitHub the first time (needs Git and access to the repo)
 rem    2. updates it to the latest version from GitHub every time after that
-rem    3. asks for your PostgreSQL user and password once, and remembers them for you only
+rem    3. sets up the POC's own private PostgreSQL the first time (no install, no password)
 rem    4. runs start-all.bat from the downloaded copy
 rem
 rem    SportSeek-POC.bat            update and start
-rem    SportSeek-POC.bat /config    stop, enter your PostgreSQL details again, then start
+rem    SportSeek-POC.bat /config    stop, choose the private database or an installed one, then start
 rem    SportSeek-POC.bat /stop      stop everything
 rem    Other options (/noexpo /nobrowser /min) are passed on to start-all.bat.
 rem
@@ -88,23 +88,34 @@ echo [X] %POC%\start-all.bat was not found. Check BRANCH at the top of this file
 goto :fail
 :haspoc
 
-rem ---- 2. Your PostgreSQL details (kept in your user profile, never in git)
+rem ---- 2. Which database (kept in your user profile, never in git)
+rem   private   = the POC's own PostgreSQL (default): nothing to install, no password to know
+rem   installed = a PostgreSQL already on this PC (chosen with /config)
 if /i not "%MODE%"=="config" goto :notconfig
-rem Services already running keep the old password until they are restarted, so stop them first.
+rem Services already running keep the old settings until they are restarted, so stop them first.
 if exist "%POC%\stop-all.bat" call "%POC%\stop-all.bat" /quiet
 if exist "%SETTINGS%" del "%SETTINGS%"
-:notconfig
-if not exist "%SETTINGS%" goto :asksettings
-call "%SETTINGS%"
-if defined PG_PASSWORD goto :havesettings
 echo.
-echo [!] Your saved PostgreSQL password is empty. Please enter it again.
-del "%SETTINGS%"
+echo Which database should the POC use?
+echo   1  Its own private database - recommended: nothing to install, no password needed
+echo   2  The PostgreSQL already installed on this PC - you need its password
+set "CHOICE="
+set /p "CHOICE=Choose 1 or 2 [1]: "
+if "%CHOICE%"=="2" goto :asksettings
+goto :useprivate
+:notconfig
+set "PG_MODE="
+set "PG_PASSWORD="
+if exist "%SETTINGS%" call "%SETTINGS%"
+if /i "%PG_MODE%"=="installed" if defined PG_PASSWORD goto :havesettings
+rem No settings yet, older settings, or an installed database without a password: use the private one.
+goto :useprivate
+
 :asksettings
 echo.
-echo Your PostgreSQL details are needed once. They are saved only for you, in
+echo The details of the PostgreSQL installed on this PC are saved only for you, in
 echo   %SETTINGS%
-echo The password is the one you chose when you installed PostgreSQL (for the user "postgres").
+echo The password is the one chosen when PostgreSQL was installed (for the user "postgres").
 set "PG_USER="
 set "PG_PASSWORD="
 set "PG_PORT="
@@ -112,16 +123,31 @@ set /p "PG_USER=PostgreSQL user [postgres]: "
 :askpassword
 set /p "PG_PASSWORD=PostgreSQL password: "
 if defined PG_PASSWORD goto :passwordok
-echo [!] The password can't be empty: PostgreSQL on Windows always has one. Type it and press Enter.
+echo [!] The password can't be empty. Type it and press Enter, or close this window and use option 1.
 goto :askpassword
 :passwordok
 set /p "PG_PORT=PostgreSQL port [5432]: "
 if not defined PG_USER set "PG_USER=postgres"
 if not defined PG_PORT set "PG_PORT=5432"
 rem PowerShell writes the file so any character in the password survives (% is doubled for cmd).
-powershell -NoProfile -Command "function E($v) { $v -replace '%%','%%%%' }; $q = [char]34; $lines = @('@rem SportSeek POC PostgreSQL settings for ' + $env:USERNAME + '. Run the launcher with /config to change them.', ('set ' + $q + 'PG_USER=' + (E $env:PG_USER) + $q), ('set ' + $q + 'PG_PASSWORD=' + (E $env:PG_PASSWORD) + $q), ('set ' + $q + 'PG_PORT=' + (E $env:PG_PORT) + $q)); Set-Content -Path $env:SETTINGS -Value $lines -Encoding ASCII" || (echo [X] Could not save %SETTINGS% & goto :fail)
+powershell -NoProfile -Command "function E($v) { $v -replace '%%','%%%%' }; $q = [char]34; $lines = @('@rem SportSeek POC database settings for ' + $env:USERNAME + '. Run the launcher with /config to change them.', ('set ' + $q + 'PG_MODE=installed' + $q), ('set ' + $q + 'PG_USER=' + (E $env:PG_USER) + $q), ('set ' + $q + 'PG_PASSWORD=' + (E $env:PG_PASSWORD) + $q), ('set ' + $q + 'PG_PORT=' + (E $env:PG_PORT) + $q)); Set-Content -Path $env:SETTINGS -Value $lines -Encoding ASCII" || (echo [X] Could not save %SETTINGS% & goto :fail)
 echo [ok] Saved.
 call "%SETTINGS%"
+goto :havesettings
+
+:useprivate
+(
+  echo @rem SportSeek POC database settings. Run the launcher with /config to change them.
+  echo set "PG_MODE=private"
+) > "%SETTINGS%"
+set "PG_MODE=private"
+set "PG_USER=postgres"
+rem Only reachable from this PC (localhost), on its own port.
+set "PG_PASSWORD=sportseek-poc-local"
+set "PG_PORT=5440"
+set "SSPG_HOME=%HOME_DIR%\private-postgres"
+call "%POC%\scripts\private-db.bat" || goto :fail
+
 :havesettings
 if not defined PG_PORT set "PG_PORT=5432"
 

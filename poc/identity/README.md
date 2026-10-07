@@ -73,12 +73,12 @@ After that, double-click the shortcut. Because nothing is downloaded through a b
 The shortcut runs [`SportSeek-POC.bat`](SportSeek-POC.bat) (from a temporary copy, so it can update itself safely). Everything comes from GitHub:
 
 1. Every run updates `%USERPROFILE%\SportSeek-POC\RacingAhead` to the latest commit of `claude/busy-hopper-sbfu76`, so everyone runs the same version, including the latest launcher. (Run from anywhere else, it clones the repository there on its first run.)
-2. It asks once for your PostgreSQL user, password and port, and saves them in `%USERPROFILE%\SportSeek-POC\postgres-settings.cmd`, which is yours only and never in git. They reach the API through the `ConnectionStrings__Identity` environment variable, so nobody edits `appsettings.json`.
+2. It gives the POC **its own private PostgreSQL**: the first run downloads the official, code-signed EnterpriseDB build of PostgreSQL 16 (about 300 MB; if that fails, the same build from npm, 37 MB) into `%USERPROFILE%\SportSeek-POC\private-postgres`, and creates a database there. It runs on port **5440**, listens on this PC only, and appears as a fourth window, **SportSeek - Database**. No install, no administrator rights and no password to know, and it never touches another PostgreSQL on the PC. To use a PostgreSQL that is already installed instead, run the launcher with `/config` and choose 2; its details are saved in `%USERPROFILE%\SportSeek-POC\postgres-settings.cmd`, never in git. Either way the API gets its connection string through the `ConnectionStrings__Identity` environment variable, so nobody edits `appsettings.json`.
 3. It runs `start-all.bat` from the downloaded copy (below).
 
-Options: `/config` re-enters the PostgreSQL details, `/stop` stops everything, and `/noexpo`, `/nobrowser` and `/min` are passed on to `start-all.bat`.
+Options: `/config` switches between the private database and an installed PostgreSQL, `/stop` stops everything, and `/noexpo`, `/nobrowser` and `/min` are passed on to `start-all.bat`.
 
-Each person needs Git (`winget install --id Git.Git -e`), the .NET 8 SDK, Node.js 20+ and PostgreSQL. If the repository is private, they also need access to it, and Git asks them to sign in to GitHub on the first run. The downloaded copy is managed by the launcher: local edits there are replaced on the next update. When this branch is merged, change `BRANCH` at the top of the launcher to `main`.
+Each person needs Git (`winget install --id Git.Git -e`), the .NET 8 SDK and Node.js 20+. PostgreSQL is optional. The private database needs the Microsoft Visual C++ runtime, which most PCs already have (`winget install --id Microsoft.VCRedist.2015+.x64 -e`). Don't run the launcher as administrator: PostgreSQL refuses to run with administrator rights. If the repository is private, they also need access to it, and Git asks them to sign in to GitHub on the first run. The downloaded copy is managed by the launcher: local edits there are replaced on the next update. When this branch is merged, change `BRANCH` at the top of the launcher to `main`.
 
 ### Quick start: one file starts everything
 
@@ -231,7 +231,7 @@ The Admin Portal can never self-register or grant itself Admin, and a password s
 poc/identity/
 ├── SportSeek-POC.bat             desktop launcher: clone/update from GitHub, then start-all.bat
 ├── start-all.bat / start-all.sh  start everything, restart on failure (stop-all.* to stop)
-├── scripts/                      run-forever.bat, install/remove-autostart.bat
+├── scripts/                      run-forever.bat, private-db.bat, diagnose.bat, create-desktop-shortcut.bat, install/remove-autostart.bat
 ├── SportSeek.Identity.sln
 ├── api/                          ASP.NET Core 8 Identity module
 │   ├── Program.cs                OpenIddict server + validation, DI, rate limiting

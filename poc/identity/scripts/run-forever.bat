@@ -14,13 +14,18 @@ if /i "%SVC%"=="web" (
   set "DIR=%ROOT%\web-lit"
   set "CMD=npm run serve"
 )
+if /i "%SVC%"=="db" (
+  rem The POC's private PostgreSQL; SSPG_HOME and PG_PORT come from SportSeek-POC.bat.
+  set "DIR=%SSPG_HOME%"
+  set "CMD="%SSPG_HOME%\pgsql\bin\postgres.exe" -D "%SSPG_HOME%\data" -p %PG_PORT% -c listen_addresses=localhost"
+)
 if /i "%SVC%"=="expo" (
   set "DIR=%ROOT%\app"
   set "CMD=npx expo start --web --port 8081"
   set "CI=1"
 )
 if not defined CMD (
-  echo Unknown service "%SVC%". Use api, web or expo.
+  echo Unknown service "%SVC%". Use api, web, expo or db.
   exit /b 1
 )
 
