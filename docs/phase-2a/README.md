@@ -7,6 +7,8 @@ Prepared by Srivin Platforms for RacingAhead / SportSeek (v1.0, 27 Sep 2026). Ba
 | 01 | WBS & Integrated Project Plan: WBS, schedule, dependencies, critical path, milestones, resource loading with technical skills (Section 13) | `01_WBS_and_Integrated_Project_Plan.docx` / `.pdf` |
 | 01a | Project Plan workbook: schedule with weekly Gantt, external dependency register, milestones, monthly resource loading and skills | `01a_Project_Plan_Workbook.xlsx` |
 | 02 | Project Delivery Model: lifecycle, agile cadence, governance, quality, release, change, risk, KT, support | `02_Project_Delivery_Model.docx` / `.pdf` |
+| 04 | Gap & Decision Register (15 Oct 2026): vision vs SOW conflicts, architecture gaps, decision register, traceability, industry best practices | `04_Gap_and_Decision_Register.docx` / `.pdf` |
+| 04a | Register tracker: conflicts, gaps, decisions (with status/outcome columns), traceability, best practices | `04a_Gap_and_Decision_Register_Tracker.xlsx` |
 | 03 | Technical Approach: architecture, per-module design, NFRs, engineering practices, launch plan | `03_Technical_Approach.docx` / `.pdf` |
 
 ## Delivery model (v2.1): AI-native release train, Shared Identity at launch

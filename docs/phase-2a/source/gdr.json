@@ -1,0 +1,859 @@
+{
+ "sources": [
+  [
+   "S1",
+   "SportSeek Phase 2 Statement of Work",
+   "v1.0, 15 Jul 2026 (incl. Figure 1 architecture and §11 persona journeys)"
+  ],
+  [
+   "S2",
+   "SportsSeek App — High Level Requirements",
+   "4 pages, undated"
+  ],
+  [
+   "S3",
+   "SportSeek vision boards (DOC-20261015-WA0129)",
+   "10 boards received 15 Oct 2026: ecosystem, 5-platform architecture, unified platform vision, end-user, community member, facility, academy & club, seller & brand, coach & expert, creator journeys"
+  ],
+  [
+   "S4",
+   "Srivin Phase 2A delivery pack",
+   "v2.1: WBS & Integrated Project Plan, Delivery Model, Technical Approach"
+  ]
+ ],
+ "conflicts": [
+  {
+   "id": "C1",
+   "title": "Single sign-on and in-app role switching",
+   "sev": "High",
+   "vision": "\"One Login (SSO)\" across all apps; a single \"Super App\" with a \"Switch Role\" screen (Player, Coach, Tournament Organiser, Venue Partner) (S3 boards 2–3)",
+   "sow": "SSO out of scope (§4). Two apps with separate logins; a person switches context by logging into the other app (§7). Figure 1: \"two apps, one shared identity (no SSO)\".",
+   "impact": "Determines app structure (one super-app vs User App + Partner App) and identity session design. Shared Identity (F3) goes live on 20 Oct on the SOW model.",
+   "options": "A) Keep SOW model for Phase 2 (no SSO, two apps). B) Add SSO across apps later (identity is OIDC-based, so this is mainly session configuration). C) Move to one super-app with in-app role switching (app restructure; change request).",
+   "rec": "A for Phase 2, with B kept open: F3 already uses one OIDC identity service, so SSO can be enabled later without rework. Treat C as a Stage-2 product decision with its own change request.",
+   "dec": "DEC-01"
+  },
+  {
+   "id": "C2",
+   "title": "Wallet with stored balance and partner \"Withdraw\"",
+   "sev": "Critical",
+   "vision": "\"One Wallet … All transactions. One Balance\" with a user balance (₹5,250); coaches and sellers see \"Available Balance\" with a \"Withdraw\" button (S3 boards 3, 8, 9)",
+   "sow": "No stored-value wallet, credits or float (§4). Transaction Ledger is read-only; funds route directly to partners via Razorpay Route so SportSeek never holds funds (§8.3).",
+   "impact": "Regulatory, not only functional: a balance usable to pay third-party partners is likely to fall under RBI prepaid payment instrument (PPI) rules; holding partner earnings for on-demand withdrawal risks the Payment Aggregator licensing the SOW is designed to avoid.",
+   "options": "A) Keep SOW model: Ledger view + Route settlements; show partners \"earnings & settlement status\", not a withdrawable balance. B) Wallet/balance through a licensed PPI issuer or bank partner (separate programme). C) Closed-loop reward points only (not money; see DEC-14).",
+   "rec": "A for Phase 2. Align vision artwork and marketing copy now. Any wallet (B) only after SportSeek legal/regulatory sign-off, as a separate change request.",
+   "dec": "DEC-02"
+  },
+  {
+   "id": "C3",
+   "title": "Timing of Community and Analytics",
+   "sev": "High",
+   "vision": "Phase 2 (0–6 months): Unified Identity & SSO, One Wallet, Role Management, Unified Notifications, Enhanced Partner App, Core Analytics, Community Module (S3 board 3)",
+   "sow": "Community and basic Analytics are Phase 2B, after the 2A \"harden & unify\" scope (§3.2, §12.1 M7–M8)",
+   "impact": "Expectation gap: Srivin plan completes 2A on 23 Mar 2027 with no community or analytics features. Stakeholders reading the vision roadmap may expect them by then.",
+   "options": "A) Keep SOW sequence; start 2B (Community + Expert Booking + basic analytics) on the same monthly train from Apr 2027. B) Pull a thin community slice (groups + feed + reviews) into 2A by swapping with a later 2A feature. C) Run a second pod in parallel from Jan 2027 (cost).",
+   "rec": "A, plus start event capture for analytics from R2 (G9) so dashboards are fast to deliver in 2B. Confirm the published roadmap with SportSeek stakeholders.",
+   "dec": "DEC-03"
+  },
+  {
+   "id": "C4",
+   "title": "Marketplace model (resolves SOW open item)",
+   "sev": "Medium",
+   "vision": "Third-party sellers and brands: onboarding, catalogue, orders, shipping, returns, payouts, promotions (S3 board 8)",
+   "sow": "Open item ⚑: \"Is RA only showing data of the users or is it building a marketplace?\" Build vs headless-commerce decision pending (§3.3)",
+   "impact": "The vision confirms a multi-seller marketplace. This brings e-commerce obligations (seller disclosures, returns, grievance handling) and marketplace tax treatment into scope for 2C.",
+   "options": "A) Custom build on the SportSeek platform. B) Headless commerce platform integrated via APIs. C) Partner marketplace integration.",
+   "rec": "Decide before 2C planning; Srivin to provide a build-vs-buy assessment in Q1 2027. No 2A impact.",
+   "dec": "DEC-09"
+  }
+ ],
+ "gaps": [
+  {
+   "id": "G1",
+   "title": "Cache, object/media storage and search index missing from Srivin architecture",
+   "sev": "High",
+   "evidence": "SOW Figure 1 shows Redis cache, object storage (media, docs) and a search index (future); vision shows \"Content Storage\", \"Cache Layer\", \"Global Search\" (S1, S3 board 2). Srivin TAD diagram shows only PostgreSQL and the analytics stream.",
+   "impact": "Images, documents and KYC files have no designed home; global search across people, venues and events has no path; performance headroom for search and availability is reduced.",
+   "rec": "Add Redis (cache, rate limits, OTP throttling), object storage + CDN (images, documents; signed URLs; restricted bucket for KYC), and a search ADR: PostgreSQL full-text/geo now, a dedicated search engine when global search ships.",
+   "when": "Design: HLD (23 Oct). Build: R2–R3.",
+   "owner": "Srivin Architect",
+   "dec": "DEC-11"
+  },
+  {
+   "id": "G2",
+   "title": "No Organisation (business account) model in identity",
+   "sev": "High",
+   "evidence": "Academies/clubs with coaches, staff and members; facilities with \"staff & access management\" and multiple venues; brands with teams (S3 boards 6–8)",
+   "impact": "F3 models roles per person only. Without an Organisation entity, staff logins, multi-venue businesses and academy ERP (2C) force identity rework.",
+   "rec": "Add Organisation, Membership and organisation-scoped roles (owner, manager, staff, coach) as an additive extension of the F3 identity schema. Partner services belong to an Organisation, not only a person.",
+   "when": "Design: HLD (23 Oct). Build: R2 (additive; no change to R1).",
+   "owner": "Srivin Architect / SportSeek PO",
+   "dec": "DEC-05"
+  },
+  {
+   "id": "G3",
+   "title": "Minors, guardians and children's data not modelled",
+   "sev": "Critical",
+   "evidence": "U14/U15 athletes aged 14–17 (S3 boards 7, 9), school sports, academy \"parent access\" (S1 §11.5), with performance tracking, AI recommendations and ads in the vision",
+   "impact": "Under the DPDP Act, 2023, processing a child's (under-18) personal data needs verifiable parental consent, and tracking, behavioural monitoring and targeted advertising directed at children are restricted. Identity goes live 20 Oct.",
+   "rec": "Legal view before launch on whether under-18s may register on 20 Oct (interim age gate if needed). Then: date of birth / age capture, guardian linkage and consent records, exclusion of minors from targeted ads and profiling, guardian-managed accounts for academies.",
+   "when": "Decision: 17 Oct (pre-launch). Build: R2.",
+   "owner": "SportSeek Legal / PO",
+   "dec": "DEC-04"
+  },
+  {
+   "id": "G4",
+   "title": "No pricing, fee and commission engine",
+   "sev": "High",
+   "evidence": "Commission bands (bookings 5–20%, marketplace 10–30%), per-session expert commission, coupons, packages, \"boost visibility\" (S3 board 2, 6, 8)",
+   "impact": "Route split settlement, GST on SportSeek fees and the Ledger all need correct line items. Without an order/line-item model, F5 refunds, F9 Ledger and F11 payouts will compute amounts inconsistently.",
+   "rec": "Introduce an order model with line items (price, discount, platform fee, taxes, partner share) and configurable fee rules per partner type/category; this drives Route splits, refunds and invoicing.",
+   "when": "Design: by 13 Nov (before F5 build). Build: R3–R6.",
+   "owner": "Srivin Architect / SportSeek Finance",
+   "dec": "DEC-12"
+  },
+  {
+   "id": "G5",
+   "title": "No recurring payments / subscriptions",
+   "sev": "Medium",
+   "evidence": "\"Go Premium\", monthly coaching programmes, facility memberships, seller plans, fan subscriptions (S3 boards 4, 6, 9, 10)",
+   "impact": "Subscription revenue streams have no payment path; retrofitting mandates and renewals into the payments area later is costly.",
+   "rec": "Reserve a Subscriptions capability in the payments area (gateway subscriptions / UPI AutoPay / e-mandate), with ledger events for renewals and failures.",
+   "when": "Design: 2B planning. Build: 2B/2C.",
+   "owner": "Srivin Architect",
+   "dec": "DEC-13"
+  },
+  {
+   "id": "G6",
+   "title": "Rewards and points need their own ledger",
+   "sev": "Medium",
+   "evidence": "Points, XP, levels, badges, \"Redeem points\" for turf discounts and merchandise (S3 boards 5, 10)",
+   "impact": "Mixing points with the Transaction Ledger blurs financial reporting and the no-stored-value position (C2).",
+   "rec": "Separate double-entry Rewards ledger with expiry and redemption rules; redemptions appear in orders as discount line items (G4). Not money and not withdrawable.",
+   "when": "Principle in HLD (23 Oct). Build: 2C.",
+   "owner": "Srivin Architect",
+   "dec": "DEC-14"
+  },
+  {
+   "id": "G7",
+   "title": "No real-time channel",
+   "sev": "Medium",
+   "evidence": "Live scores and match updates (S2 \"real-time match engine\"; S3), chat and messaging, live comments",
+   "impact": "Polling does not scale for live tournaments or chat; adding real-time later touches mobile, web and back end.",
+   "rec": "ADR for a real-time layer (SignalR within the .NET estate, or a managed real-time service), with fan-out sized for tournament peaks.",
+   "when": "ADR: by 26 Feb 2027. Build: 2B.",
+   "owner": "Srivin Architect",
+   "dec": "DEC-15"
+  },
+  {
+   "id": "G8",
+   "title": "No in-app notification inbox",
+   "sev": "Low",
+   "evidence": "Vision Notification Engine lists \"In-App\" alongside Email, SMS, Push (S3 board 2)",
+   "impact": "Users cannot review past alerts; push-only delivery is lossy.",
+   "rec": "Add a notification centre (stored notifications, read/unread, deep links) to F4.",
+   "when": "R2 (F4 scope).",
+   "owner": "SportSeek PO",
+   "dec": "DEC-16"
+  },
+  {
+   "id": "G9",
+   "title": "Data for analytics and AI not captured until 2B",
+   "sev": "High",
+   "evidence": "Vision: Data Lake, Event Stream, Real-time Analytics, AI recommendations at 6–12 months (S3 board 2–3); SOW: AI needs 6–12 months of production data first (§3.3)",
+   "impact": "If capture starts in 2B, the data needed for AI will not exist when 2C starts.",
+   "rec": "From R2, stream domain events (with a documented, versioned event taxonomy and consent flags) to low-cost raw storage; build dashboards in 2B on top.",
+   "when": "Design: HLD (23 Oct). Build: R2.",
+   "owner": "Srivin Architect / SportSeek PO",
+   "dec": "DEC-17"
+  },
+  {
+   "id": "G10",
+   "title": "No public / partner API and integration strategy",
+   "sev": "Medium",
+   "evidence": "\"Open API Layer: connects partners, devices & third parties\"; IoT-ready facility management; wearables (S3 board 4; S2 add-ons)",
+   "impact": "Integrations get built ad hoc through internal APIs, which become hard to change.",
+   "rec": "Separate partner API surface at the gateway: OAuth client credentials, API keys per partner, rate limits, versioning, outbound webhooks with signing.",
+   "when": "Principle in HLD (23 Oct). Build: when first external integration is prioritised.",
+   "owner": "Srivin Architect",
+   "dec": "DEC-18"
+  },
+  {
+   "id": "G11",
+   "title": "Partner-facing dashboards need multi-tenant analytics",
+   "sev": "Medium",
+   "evidence": "Facility, coach, academy and seller dashboards with revenue, utilisation, demographics, forecasts, downloadable reports (S3 boards 6–9)",
+   "impact": "\"Buy a BI tool\" (SOW §6.1) covers internal reporting; dashboards inside partner apps need per-partner row-level security and embedding.",
+   "rec": "Choose an analytics tool that supports secure embedding and row-level security, or build partner dashboards from pre-aggregated tables.",
+   "when": "Decision: 2B planning (26 Feb 2027).",
+   "owner": "SportSeek PO / Srivin Architect",
+   "dec": "DEC-19"
+  },
+  {
+   "id": "G12",
+   "title": "No trust & safety or dispute capability",
+   "sev": "Medium",
+   "evidence": "Verified profiles, content moderation, report & block, code of conduct, dispute resolution (S3 boards 5, 8)",
+   "impact": "User-generated content and marketplace disputes carry legal duties (grievance handling under the IT Intermediary Rules and Consumer Protection (E-Commerce) Rules).",
+   "rec": "Moderation and disputes area: report queue, automated + human moderation, appeal flow, grievance officer workflow, audit trail.",
+   "when": "Before Community (2B) and Marketplace (2C).",
+   "owner": "SportSeek Legal / PO",
+   "dec": "DEC-20"
+  },
+  {
+   "id": "G13",
+   "title": "International readiness basics",
+   "sev": "Medium",
+   "evidence": "Phase 4: international payments, global tournaments, new sports (S3 board 3)",
+   "impact": "International support is out of SOW scope (§4), but money without currency codes and local timestamps are very costly to retrofit.",
+   "rec": "Store ISO 4217 currency with every amount, timestamps in UTC with venue time zone, translatable strings, locale-aware formatting. No multi-currency features in Phase 2.",
+   "when": "Principle in HLD (23 Oct); applied from R2.",
+   "owner": "Srivin Architect",
+   "dec": "DEC-21"
+  },
+  {
+   "id": "G14",
+   "title": "Media and streaming platform",
+   "sev": "Low",
+   "evidence": "Live streaming, highlights, reels, creator content, copyright protection, ads (S3 boards 1, 10)",
+   "impact": "Out of SOW scope (§4) but central to the vision's 5th platform.",
+   "rec": "Reserve a Media area boundary; use a managed video service (upload, transcode, CDN, DRM) when scoped. Images and short media use G1 storage meanwhile.",
+   "when": "Scope decision: Phase 3 planning.",
+   "owner": "SportSeek Sponsor",
+   "dec": "DEC-22"
+  },
+  {
+   "id": "G15",
+   "title": "Smaller vision items not in any plan",
+   "sev": "Low",
+   "evidence": "Calendar sync (S2, S3 board 6), video sessions with experts (S2, S3 board 9), shipping & returns (S2, S3 board 8), referral and affiliate tracking (S3 boards 6, 10), guest browsing (S3 board 4)",
+   "impact": "Each is small, but together they shape stakeholder expectations.",
+   "rec": "Log as backlog epics with phase tags; guest browsing and calendar export can ride an early 2B train.",
+   "when": "2B scoping.",
+   "owner": "SportSeek PO",
+   "dec": "DEC-23"
+  }
+ ],
+ "decisions": [
+  [
+   "DEC-01",
+   "SSO and in-app role switching (C1)",
+   "Keep two apps with separate logins in Phase 2; SSO-ready identity; super-app as a Stage-2 change request",
+   "SportSeek Sponsor / PO",
+   "2026-10-30",
+   "R2 app design proceeds on two-app model by default",
+   "Open"
+  ],
+  [
+   "DEC-02",
+   "Wallet / stored balance / partner withdraw (C2)",
+   "No stored balance in Phase 2; partners see earnings and settlement status; any wallet only after legal sign-off via a licensed issuer",
+   "SportSeek Sponsor / Legal",
+   "2026-11-13",
+   "F9/F11 designed on SOW model; marketing may keep promising a wallet",
+   "Open"
+  ],
+  [
+   "DEC-03",
+   "Community and Analytics timing (C3)",
+   "Keep SOW sequence; 2B starts Apr 2027 on the same train; event capture from R2",
+   "SportSeek Sponsor",
+   "2026-10-30",
+   "Stakeholder expectation risk persists",
+   "Open"
+  ],
+  [
+   "DEC-04",
+   "Under-18 users at launch and children's data (G3)",
+   "Legal view now; interim age gate if needed; guardian consent model in R2",
+   "SportSeek Legal / PO",
+   "2026-10-17",
+   "Launch with unmanaged children's-data risk",
+   "Open — urgent"
+  ],
+  [
+   "DEC-05",
+   "Organisation model in identity (G2)",
+   "Approve Organisation / Membership / org roles as additive R2 extension",
+   "SportSeek PO (approve); Srivin Architect",
+   "2026-10-23",
+   "Staff and multi-venue partners unsupported; rework later",
+   "Open"
+  ],
+  [
+   "DEC-06",
+   "Scale targets for NFRs (existing D20)",
+   "Provide 12- and 24-month targets: users, partners, peak concurrency, bookings/day, p95 latency, uptime",
+   "SportSeek Sponsor",
+   "2026-10-30",
+   "Capacity design rests on assumptions",
+   "Open"
+  ],
+  [
+   "DEC-07",
+   "Cloud provider (vision states \"AWS / GCP\")",
+   "Confirm the current Phase 1 cloud as the target; no migration in Phase 2",
+   "SportSeek Tech",
+   "2026-10-23",
+   "IaC and managed-service choices on hold",
+   "Open"
+  ],
+  [
+   "DEC-08",
+   "Marketplace tax treatment (TDS s.194-O, GST TCS s.52)",
+   "Tax adviser opinion on SportSeek as an e-commerce operator for services and goods",
+   "SportSeek Finance",
+   "2027-01-08",
+   "Ledger and payout calculations may be wrong at F9/F11",
+   "Open"
+  ],
+  [
+   "DEC-09",
+   "Marketplace build vs headless commerce (C4)",
+   "Srivin build-vs-buy assessment in Q1 2027",
+   "SportSeek Sponsor",
+   "2027-03-31",
+   "Delays 2C marketplace start",
+   "Open"
+  ],
+  [
+   "DEC-10",
+   "Pending SOW items already in plan (D10, D11, D15, D16)",
+   "Route enablement, refund policy, ledger visibility, warranty SLAs — tracked in WBS §10.3",
+   "SportSeek",
+   "per WBS",
+   "Per WBS dependency register",
+   "Tracked"
+  ],
+  [
+   "DEC-11",
+   "Cache, storage and search (G1)",
+   "Redis + object storage/CDN now; PostgreSQL search now, search engine later",
+   "Srivin Architect (ADR); SportSeek Tech approve",
+   "2026-10-23",
+   "Media and search built ad hoc",
+   "Open"
+  ],
+  [
+   "DEC-12",
+   "Order line items and fee engine (G4)",
+   "Adopt order/line-item model and fee rules before F5",
+   "SportSeek Finance / PO",
+   "2026-11-13",
+   "Refund, ledger and payout amounts inconsistent",
+   "Open"
+  ],
+  [
+   "DEC-13",
+   "Subscriptions capability (G5)",
+   "Reserve in payments area; build in 2B/2C",
+   "SportSeek PO",
+   "2027-02-26",
+   "Subscription revenue delayed",
+   "Open"
+  ],
+  [
+   "DEC-14",
+   "Rewards as a separate points ledger (G6)",
+   "Approve principle: points are not money, separate ledger",
+   "SportSeek Sponsor / Finance",
+   "2026-10-23",
+   "Risk of points mixing with financial ledger",
+   "Open"
+  ],
+  [
+   "DEC-15",
+   "Real-time technology (G7)",
+   "ADR: SignalR or managed real-time service",
+   "Srivin Architect",
+   "2027-02-26",
+   "2B live scores/chat delayed",
+   "Open"
+  ],
+  [
+   "DEC-16",
+   "In-app notification inbox in F4 (G8)",
+   "Add to R2 scope",
+   "SportSeek PO",
+   "2026-10-30",
+   "Ships without inbox; added later",
+   "Open"
+  ],
+  [
+   "DEC-17",
+   "Event capture for analytics from R2 (G9)",
+   "Approve raw event capture from R2 with consent flags",
+   "SportSeek PO",
+   "2026-10-23",
+   "No data for AI when 2C starts",
+   "Open"
+  ],
+  [
+   "DEC-18",
+   "Partner / public API principles (G10)",
+   "Separate partner API surface; principles in HLD",
+   "Srivin Architect",
+   "2026-10-23",
+   "Ad hoc integrations",
+   "Open"
+  ],
+  [
+   "DEC-19",
+   "Embedded partner analytics approach (G11)",
+   "Tool with embedding + row-level security, or pre-aggregated tables",
+   "SportSeek PO",
+   "2027-02-26",
+   "Partner dashboards rebuilt later",
+   "Open"
+  ],
+  [
+   "DEC-20",
+   "Trust & safety and grievance model (G12)",
+   "Moderation/disputes area and grievance officer workflow before 2B",
+   "SportSeek Legal",
+   "2027-02-26",
+   "Community cannot launch compliantly",
+   "Open"
+  ],
+  [
+   "DEC-21",
+   "International-ready data conventions (G13)",
+   "Currency codes, UTC + venue time zone, translatable strings",
+   "Srivin Architect",
+   "2026-10-23",
+   "Costly retrofit",
+   "Open"
+  ],
+  [
+   "DEC-22",
+   "Media / streaming scope (G14)",
+   "Phase 3 scoping; managed video service",
+   "SportSeek Sponsor",
+   "2027-03-31",
+   "Vision platform 5 unplanned",
+   "Open"
+  ],
+  [
+   "DEC-23",
+   "Backlog placement of smaller items (G15)",
+   "Tag into 2B/2C backlog",
+   "SportSeek PO",
+   "2027-02-26",
+   "Expectation drift",
+   "Open"
+  ]
+ ],
+ "trace": [
+  [
+   "Foundation",
+   "Unified identity: single login, profile, roles & permissions",
+   "Identity domain — F3 (R1); org model G2",
+   "Partial",
+   "C1, G2, G3"
+  ],
+  [
+   "Foundation",
+   "Payments & wallet: subscriptions, payouts & settlements",
+   "Transaction Ledger F9, Route payouts F11",
+   "Partial",
+   "C2, G4, G5"
+  ],
+  [
+   "Foundation",
+   "Community graph: connections, followers, groups",
+   "Community domain (2B)",
+   "Planned 2B",
+   "C3"
+  ],
+  [
+   "Foundation",
+   "Notification engine: in-app, email, SMS, push",
+   "Notification domain — F1, F2, F4, F12",
+   "Partial",
+   "G8"
+  ],
+  [
+   "Foundation",
+   "Analytics & data layer; event stream; data lake",
+   "Outbox → broker; analytics 2B",
+   "Partial",
+   "G9, G11"
+  ],
+  [
+   "Foundation",
+   "Search & discovery: global search, smart filters",
+   "Venue search (Phase 1); search ADR",
+   "Gap",
+   "G1"
+  ],
+  [
+   "Foundation",
+   "AI & personalisation",
+   "Phase 2C+ per SOW",
+   "Planned 2C",
+   "G9"
+  ],
+  [
+   "Foundation",
+   "Security & privacy",
+   "Security & DPDP controls (TAD §7)",
+   "Partial",
+   "G3"
+  ],
+  [
+   "Foundation",
+   "Open API layer for partners and devices",
+   "—",
+   "Gap",
+   "G10"
+  ],
+  [
+   "Shared data",
+   "User DB, Transaction DB",
+   "PostgreSQL, schema per domain",
+   "Covered",
+   "—"
+  ],
+  [
+   "Shared data",
+   "Cache layer; content storage",
+   "Not in Srivin diagram (in SOW Figure 1)",
+   "Gap",
+   "G1"
+  ],
+  [
+   "Commerce",
+   "Facility & slot booking, cancellations, waitlist",
+   "Phase 1 + F5, F8",
+   "Covered",
+   "—"
+  ],
+  [
+   "Commerce",
+   "Marketplace (gear, nutrition)",
+   "Phase 2C",
+   "Planned 2C",
+   "C4"
+  ],
+  [
+   "Commerce",
+   "Subscriptions, packages, offers & discounts",
+   "—",
+   "Gap",
+   "G4, G5"
+  ],
+  [
+   "Community",
+   "Feed, groups, messaging, profiles, polls",
+   "Phase 2B",
+   "Planned 2B",
+   "C3, G7, G12"
+  ],
+  [
+   "Intelligence",
+   "Analytics, rankings, performance tracking, AI insights",
+   "Phase 2B/2C",
+   "Planned 2B/2C",
+   "G9, G11"
+  ],
+  [
+   "Infrastructure",
+   "League & tournament management, scheduling, scoring",
+   "Phase 1 + hardening",
+   "Covered",
+   "—"
+  ],
+  [
+   "Infrastructure",
+   "Coach & staff management; facility staff & access",
+   "F7 partner model + G2",
+   "Partial",
+   "G2"
+  ],
+  [
+   "Infrastructure",
+   "Academies & schools ERP, attendance, fees",
+   "Phase 2C",
+   "Planned 2C",
+   "G2, G3, G5"
+  ],
+  [
+   "Media",
+   "Live streaming, highlights, creator content, ads",
+   "Out of SOW scope (§4)",
+   "Out of scope",
+   "G14"
+  ],
+  [
+   "Experience",
+   "Super App with role switching",
+   "User App + Partner App (SOW)",
+   "Conflict",
+   "C1"
+  ],
+  [
+   "Experience",
+   "Partner App, Admin Portal, Web platform",
+   "Phase 1 apps; Web F6, F10",
+   "Covered",
+   "—"
+  ],
+  [
+   "Experience",
+   "Stage 2–3 dedicated apps",
+   "BFF per client; shared design system",
+   "Covered (design)",
+   "—"
+  ]
+ ],
+ "practices": [
+  [
+   "Architecture",
+   "Bounded contexts and a modular monolith with enforced boundaries; extract services only on evidence",
+   "Domain-Driven Design; SOW §6",
+   "One module per domain, schema per domain, architecture tests in CI",
+   "Adopted",
+   "TAD §5"
+  ],
+  [
+   "Architecture",
+   "Architecture documented as code with decision records",
+   "C4 model; Architecture Decision Records (ADRs)",
+   "C4 context/container views kept in repo; ADR for every significant choice (DEC-11, 15, 18…)",
+   "Adopted",
+   "TAD §11–12"
+  ],
+  [
+   "Architecture",
+   "Cloud workloads reviewed against the provider's well-architected pillars",
+   "AWS Well-Architected / Google Cloud Architecture Framework",
+   "Review at HLD and before R6 (security, reliability, cost, performance, operations)",
+   "Planned",
+   "DEC-07"
+  ],
+  [
+   "Architecture",
+   "Twelve-factor application practices",
+   "The Twelve-Factor App",
+   "Config in environment, stateless processes, disposability, dev/prod parity",
+   "Adopted",
+   "TAD §8"
+  ],
+  [
+   "APIs",
+   "Contract-first APIs with a published specification",
+   "OpenAPI 3.x",
+   "OpenAPI per module; Postman collections generated (SOW §13); contract tests in CI",
+   "Adopted",
+   "TAD §8"
+  ],
+  [
+   "APIs",
+   "Standard error format and safe retries",
+   "RFC 9457 Problem Details; idempotency keys",
+   "One error envelope across APIs; idempotency keys on payment, refund and booking commands",
+   "Adopted (errors: Planned)",
+   "TAD §6.4"
+  ],
+  [
+   "APIs",
+   "API security baseline",
+   "OWASP API Security Top 10",
+   "Object-level authorisation checks, rate limits, input validation, inventory of endpoints",
+   "Planned",
+   "TAD §7.1"
+  ],
+  [
+   "Identity",
+   "Standards-based authentication for public clients",
+   "OAuth 2.0 + OpenID Connect; PKCE (RFC 7636); OAuth 2.0 Security BCP (RFC 9700)",
+   "OIDC client per app, PKCE on mobile/web, short-lived tokens, refresh-token rotation",
+   "Adopted",
+   "F3"
+  ],
+  [
+   "Identity",
+   "Authenticator and recovery assurance",
+   "NIST SP 800-63B",
+   "OTP throttling, lockout, secure recovery, step-up for payouts and KYC changes",
+   "Partial",
+   "G3, F3"
+  ],
+  [
+   "Identity",
+   "Organisation-scoped access control",
+   "RBAC / attribute-based policies",
+   "Org membership roles for academies, facilities, brands",
+   "Gap",
+   "G2"
+  ],
+  [
+   "Security",
+   "Application security verification standard",
+   "OWASP ASVS (web/API); OWASP MASVS (mobile)",
+   "ASVS Level 2 target for identity, payments and admin; MASVS for both apps",
+   "Adopted",
+   "TAD §7.1"
+  ],
+  [
+   "Security",
+   "Secure software supply chain",
+   "SBOM (CycloneDX or SPDX); SLSA build provenance",
+   "SBOM per build, dependency scanning, signed artefacts",
+   "Planned",
+   "—"
+  ],
+  [
+   "Security",
+   "Information security management",
+   "ISO/IEC 27001",
+   "Policies, access reviews, supplier controls aligned to 27001; certification is SportSeek's choice",
+   "Planned",
+   "—"
+  ],
+  [
+   "Security",
+   "Cyber-incident reporting and log retention in India",
+   "CERT-In Directions (April 2022)",
+   "Incident reporting within the mandated window; system logs retained as required; synchronised clocks",
+   "Gap",
+   "add to runbook"
+  ],
+  [
+   "Payments",
+   "Card-data scope minimisation",
+   "PCI DSS v4.0",
+   "Gateway-hosted checkout and tokenisation; no card or UPI credentials stored",
+   "Adopted",
+   "TAD §6.5"
+  ],
+  [
+   "Payments",
+   "Regulated money flows",
+   "RBI Payment Aggregator and PPI frameworks",
+   "Route split settlement; no stored balance (C2)",
+   "Adopted",
+   "C2, DEC-02"
+  ],
+  [
+   "Payments",
+   "Correct financial records",
+   "Double-entry bookkeeping; daily reconciliation",
+   "Order line items (G4); reconciliation vs gateway; separate rewards ledger (G6)",
+   "Partial",
+   "G4, G6"
+  ],
+  [
+   "Privacy",
+   "Personal-data protection law",
+   "DPDP Act, 2023 and DPDP Rules",
+   "Notice, consent, purpose limitation, rights handling, breach response; children's data controls",
+   "Partial",
+   "G3"
+  ],
+  [
+   "Privacy",
+   "Privacy information management",
+   "ISO/IEC 27701; privacy by design",
+   "Data inventory, retention schedule, privacy reviews for new features",
+   "Planned",
+   "—"
+  ],
+  [
+   "Data",
+   "Interoperable, versioned event contracts",
+   "CloudEvents; schema registry; data contracts",
+   "Event taxonomy with versioning and consent flags from R2",
+   "Planned",
+   "G9"
+  ],
+  [
+   "Data",
+   "Backup and recovery objectives",
+   "Defined RPO/RTO; 3-2-1 backups; restore drills",
+   "PITR on PostgreSQL; quarterly restore drill; RPO/RTO agreed with SportSeek",
+   "Partial",
+   "DEC-06"
+  ],
+  [
+   "Reliability",
+   "Service level objectives and error budgets",
+   "Google SRE practices",
+   "SLOs for login, booking, payment; error budget guides release pace",
+   "Planned",
+   "DEC-06"
+  ],
+  [
+   "Reliability",
+   "Unified telemetry",
+   "OpenTelemetry",
+   "Traces, metrics and logs from .NET services and mobile crash reporting",
+   "Adopted",
+   "TAD §7.4"
+  ],
+  [
+   "Delivery",
+   "Delivery performance measurement",
+   "DORA metrics",
+   "Deployment frequency, lead time, change failure rate, time to restore — reported monthly",
+   "Adopted",
+   "DLM §19"
+  ],
+  [
+   "Delivery",
+   "Progressive delivery",
+   "Feature flags; phased store rollouts",
+   "Flags per feature; F3 remote switch; staged mobile rollouts",
+   "Adopted",
+   "DLM §13"
+  ],
+  [
+   "Delivery",
+   "Infrastructure as code",
+   "IaC with peer review (e.g. Terraform)",
+   "All environments in code; no manual production change",
+   "Adopted",
+   "TAD §8"
+  ],
+  [
+   "Quality",
+   "Accessibility",
+   "WCAG 2.1 AA (2.2 recommended)",
+   "Web and app accessibility checks per release",
+   "Adopted",
+   "TAD §6.6"
+  ],
+  [
+   "Quality",
+   "Balanced automated testing",
+   "Test pyramid; contract testing",
+   "Unit/API/contract in CI; curated E2E; regression per release",
+   "Adopted",
+   "DLM §12"
+  ],
+  [
+   "AI",
+   "AI risk and management systems",
+   "NIST AI RMF; ISO/IEC 42001",
+   "Governs AI-assisted engineering now and AI features later (recommendations, moderation)",
+   "Partial",
+   "DLM §14"
+  ],
+  [
+   "Trust & safety",
+   "Grievance and moderation duties for user content",
+   "IT (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021",
+   "Grievance officer, reporting and takedown workflow before Community",
+   "Gap",
+   "G12"
+  ],
+  [
+   "Marketplace",
+   "E-commerce consumer obligations",
+   "Consumer Protection (E-Commerce) Rules, 2020",
+   "Seller disclosures, returns/refund policy, grievance handling before Marketplace",
+   "Gap",
+   "C4, G12"
+  ]
+ ]
+}
