@@ -4,9 +4,9 @@ import { APPS, base, mark } from './shared.js';
 import './app-shell.js';
 
 const GUIDE = [
-  ['user', 'Register in the User App', 'Any Indian mobile, e.g. 98111 22233. The code arrives as a notification: tap it.'],
-  ['partner', 'Use the same number in the Partner App', 'The account is found, and a role is added only after you prove ownership by OTP.'],
-  ['admin', 'Watch the Admin Portal', 'Pre-filled admin number. One identity with both roles, the audit trail, the Phase 1 bootstrap and the remote switch.'],
+  ['user', 'Register, or use the demo identity', 'New: any Indian mobile, e.g. 98111 22233; tap the code notification. Or tap "Demo identity: Kavya Reddy".'],
+  ['partner', 'Same person on the Partner App', 'Same number links after OTP proof; Kavya signs in with the same password. One ID, app-scoped roles.'],
+  ['admin', 'Watch it in the Admin Portal', 'Admin +91 90000 00001, password Admin@2026. Roles, KYC, devices, audit trail, bootstrap and the remote switch.'],
 ];
 
 // Faint court markings for the floodlit stage (a tennis court, drawn once as a data URI).

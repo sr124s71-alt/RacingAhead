@@ -35,7 +35,7 @@ builder.Services.AddOpenIddict()
     .AddServer(o =>
     {
         o.SetTokenEndpointUris("connect/token");
-        o.AllowPasswordFlow().AllowRefreshTokenFlow().AllowCustomFlow(Seeder.OtpGrantType);
+        o.AllowPasswordFlow().AllowRefreshTokenFlow().AllowCustomFlow(Seeder.OtpGrantType).AllowCustomFlow(Seeder.Phase1SessionGrantType);
         o.RegisterScopes(Scopes.Profile, Scopes.Roles, Scopes.OfflineAccess);
         o.SetAccessTokenLifetime(TimeSpan.FromMinutes(15));
         o.SetRefreshTokenLifetime(TimeSpan.FromDays(14));
@@ -81,6 +81,7 @@ builder.Services.AddScoped<OtpService>();
 builder.Services.AddScoped<LinkingService>();
 builder.Services.AddScoped<Phase1Store>();
 builder.Services.AddScoped<BootstrapService>();
+builder.Services.AddScoped<SessionService>();
 
 var app = builder.Build();
 
@@ -111,6 +112,7 @@ app.UseCors();
 app.UseMiddleware<MinimumVersionMiddleware>();
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<SessionCheckMiddleware>();
 app.UseAuthorization();
 
 app.MapGet("/", () => Results.Redirect("/api/config"));

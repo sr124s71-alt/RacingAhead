@@ -12,7 +12,7 @@ It proves the one claim that matters for F3: **one person has one identity acros
 |---|---|---|
 | 1 | Register on the User App with OTP; a new identity is created with the **Player** role | User App |
 | 2 | The same phone registers on the Partner App: the existing identity is found, **ownership is proved by OTP**, and **Facility Partner is added to the same identity**. No second record (§6.1 "Account linking") | Partner App, Admin → Identities |
-| 3 | A wrong OTP never links; 5 failures lock the number for 15 min; OTP requests are rate-limited per number and per IP (§6.1 "Authentication") | Partner App |
+| 3 | A wrong OTP never links; 5 failures lock the number for 15 min; OTP requests are rate-limited per number, per device and per IP; **Send a new code** retry (§6.1 "Authentication", F3-S01) | Partner App |
 | 4 | **App-scoped tokens**: the User App token carries only Player, the Partner App token only partner roles. Each app is its own OIDC client (§6.1) | Profile → "What this app's token carries" |
 | 5 | **KYC on the identity**: submitted once in the Partner App, visible in the User App (SOW §7.4) | Both apps, Admin verifies |
 | 6 | **One credential**: a password set in one app works in the other, but a password never links a new app (OTP required) | Profile → Password; Password tab |
@@ -21,7 +21,11 @@ It proves the one claim that matters for F3: **one person has one identity acros
 | 9 | A Phase 1 user proves their number and **claims their existing account**, KYC included | Partner App |
 | 10 | **Remote switch (plan task 2.10)**: F3 off → apps fall back to the Phase 1 login; back on → nothing lost | Admin → Remote switch |
 | 11 | **Minimum-version enforcement**: old app builds get "Update required" and the API answers 426 | Admin → Remote switch |
-| 12 | The acceptance test the Technical Approach promises: *"existing User App phone registers on Partner App → same identity, role added, no duplicate"* | `tests/`, 13 automated tests |
+| 12 | **Per-device sign-out** (F3-S03): every sign-in is a device session; signing out one device ends its access and refresh at once, other devices stay signed in | Profile → Signed-in devices |
+| 13 | **KYC approve or reject with a reason** (F3-S06); the person sees the reason and resubmits | Admin → Identities; Partner App |
+| 14 | **Transparent migration** (F3-S05): a Phase 1 sign-in made while F3 was off moves onto Shared Identity when it is switched on, without signing in again | User App after Remote switch on |
+| 15 | **Ready-made demo identity**: Kavya Reddy, Player and Coach on one ID, KYC verified, one password | "Demo identity" button on the sign-in screens |
+| 16 | The acceptance test the Technical Approach promises: *"existing User App phone registers on Partner App → same identity, role added, no duplicate"* | `tests/`, 18 automated tests (see docs/F3-backlog-coverage.md) |
 
 ## Stack
 
@@ -175,28 +179,36 @@ dotnet test
 
 Tests create a throwaway database per test class on `localhost` (user `postgres`, password `postgres`) and drop it afterwards. To use other credentials, set `IDENTITY_TEST_PG`, e.g. `Host=localhost;Port=5432;Username=me;Password=secret`.
 
-## Demo script (about 10 minutes)
+## Demo script (about 12 minutes)
 
-Open the **demo stage** (`?app=stage`). There is no SMS provider: each app has a **Dev SMS inbox** panel showing the code "sent" to the phone. Tap the highlighted message to fill the code in.
+Start with the **SportSeek POC** shortcut (or `start-all.bat`); the browser opens the demo stage at http://localhost:8082: the User App and Partner App on phones, the Admin Portal in a browser window. Codes arrive as a phone notification on screen: tap it to fill the code in. Each step names the Product Backlog story it shows; [docs/F3-backlog-coverage.md](docs/F3-backlog-coverage.md) maps every acceptance criterion.
 
-| Step | Do | Say |
-|---|---|---|
-| 1 | **User App**: enter `98111 22233`, keep "Play & book", **Send code**. Enter a name, tap the inbox code, **Verify & create account** | "A new player registers. One identity is created, with the Player role." |
-| 2 | **Partner App**: enter the same number as `+91 98111 22233`, choose **Facility Partner**, **Send code** | "Different app, different format, same number. It's normalised and recognised: *Existing SportSeek account found*." |
-| 3 | Type `000000` and **Verify & link account** | "Matching a number is not enough. Without proof of ownership nothing is linked. That's the account-takeover protection. Five failures lock the number." |
-| 4 | Tap the inbox code, **Verify & link account** | "Ownership proved: Facility Partner is added to the *same* identity. No new account." Point at "Also on your account: Player · User App". |
-| 5 | Partner App → **Show** the token panel | "Each app gets its own token with only its own roles. No silent SSO." |
-| 6 | Partner App → KYC: PAN `ABCDE1234F`, **Submit**. Watch the **User App** | "KYC is on the identity, so the User App shows it immediately." |
-| 7 | **Admin Portal**: the admin number is pre-filled (`+91 90000 00001`). **Send code**, use the code, sign in. Show **Identities** (one person, two app roles) and **Verify** the KYC | "One record, roles from two apps, KYC verified once. It turns green in both apps." |
-| 8 | Admin → **Audit log** | "Every decision is recorded, with the reason: created, OTP failed, role linked, KYC submitted and verified." |
-| 9 | Admin → **Phase 1 & bootstrap** → **Run bootstrap** | "Launch day: every existing account is loaded 1:1. Three people already had duplicate accounts. They are flagged for the R2 merge with approved rules, not merged blindly." |
-| 10 | **Partner App** → Sign out → enter `98765 43210` (Arjun, Phase 1 partner) → code → verify | "An existing partner proves his number and gets his account, verified KYC included." |
-| 11 | Admin → **Remote switch** → turn F3 **off**. Watch the apps | "If anything goes wrong at launch we switch F3 off: the apps fall back to the Phase 1 login (e.g. `98123 45678` / `demo1234`). Switch on: nothing lost." |
-| 12 | Admin → Minimum version `1.1.0` → **Save**, then **Reset to 1.0.0** | "Old app versions in the field are told to update, and the API refuses them." |
+| # | Do | Say | Story |
+|---|---|---|---|
+| 1 | **User App** and **Partner App**: tap **Demo identity: Kavya Reddy**, then **Sign in** in each | "One person, one SportSeek ID, one password. Each app shows only its own role: Player here, Coach there. KYC was verified once." | F3-S03 |
+| 2 | User App → **Signed-in devices** → **Sign out** next to the iPhone (Partner App) | "A lost phone is signed out on its own. The Partner App is out within seconds; this phone stays signed in." | F3-S03 |
+| 3 | User App: **Sign out**. Register `98111 22233`, name *Asha Kumar*, tap the code notification, **Verify & create account** | "A new player: one identity, Player role, only after the code is verified." | F3-S01 |
+| 4 | Partner App: `+91 98111 22233`, **Facility Partner**, **Send code** → *Existing SportSeek account found* | "Different app, different format, same person, recognised." | F3-S01 |
+| 5 | Type `000000` → **Verify & link account** → *Incorrect code*; then **Send a new code**, tap the notification, **Verify & link account** | "A matching number isn't enough: ownership must be proved. Clear retry. Five failures lock the number." | F3-S01, F3-S02 |
+| 6 | Show **Linked to your existing SportSeek account** and the One-ID diagram | "No second account. Facility Partner was added to the same identity." | F3-S02 |
+| 7 | Partner App → KYC → PAN `ABCDE1234F` → **Submit for verification** | | F3-S02 |
+| 8 | **Admin Portal** → **Password** tab → `Admin@2026` → **Sign in**. On Asha: **Reject…**, reason *PAN image is blurred*, **Reject with reason** | "Ops sees every role, contact, KYC and device in one place. The person sees the reason." | F3-S06 |
+| 9 | Partner App: resubmit `ABCDE9999F`. Admin: **Verify KYC** | "Verified once, green in both apps." | F3-S06 |
+| 10 | Admin → **Audit log** | "Every decision with its reason: created, code failed, role linked, KYC rejected and verified, device signed out." | F3-S02 |
+| 11 | Admin → **Phase 1 & bootstrap** → **Run bootstrap** | "Launch day: 11 Phase 1 accounts = 11 identities, reconciled. Three people with duplicate accounts are flagged for the R2 merge." | F3-S04, EN-S01 |
+| 12 | User App: **Sign out**. Admin → **Remote switch** off → User App shows the Phase 1 login; sign in `98123 45678` / `demo1234` | "If anything goes wrong at launch, one switch takes everyone back to the old login, without an app release." | F3-S05 |
+| 13 | Admin: switch **on** → the User App changes to **Moved to Shared Identity** by itself | "And switching back on moves people across without signing in again." | F3-S05 |
+| 14 | Optional: minimum version `1.1.0` → **Save** → apps show **Update required**; **Reset to 1.0.0** | "Old app builds can't use retired flows." | F3-S04 |
 
-To rehearse again: Admin → Remote switch → **Reset demo data**, then sign in to the Admin Portal again.
+To rehearse again: Admin → **Remote switch** → **Reset demo data…** (Kavya and the admin are re-created).
 
-**Phase 1 seed data** (password `demo1234`, for the Phase 1 login): User App: Arjun Mehta `98765 43210`, Priya Nair `9123456780`, Rahul Verma `+91 99887 76655`, Sneha Iyer `9812345678`, Karan Singh `090011 22334`, Ananya Rao `9445566778`. Partner App: Arjun's Turf Arena `+91-9876543210`, Priya Tennis Coaching `09123456780`, Verma Sports Physio `9988776600`, Smash Badminton Hub `9876501234`, FitFuel Nutrition `9765432109`. Arjun and Priya share a phone across the apps, and Rahul shares an email: those are the planted duplicates.
+| Demo accounts | Sign in |
+|---|---|
+| Kavya Reddy (demo identity: Player + Coach) | `+91 90000 00002` or `kavya.reddy@example.com`, password `Demo@2026` |
+| Admin | `+91 90000 00001`, code or password `Admin@2026` |
+| Phase 1 accounts | password `demo1234`: User App Arjun Mehta `98765 43210`, Priya Nair `9123456780`, Rahul Verma `+91 99887 76655`, Sneha Iyer `9812345678`, Karan Singh `090011 22334`, Ananya Rao `9445566778`; Partner App Arjun's Turf Arena `+91-9876543210`, Priya Tennis Coaching `09123456780`, Verma Sports Physio `9988776600`, Smash Badminton Hub `9876501234`, FitFuel Nutrition `9765432109`. Arjun and Priya share a phone across the apps, and Rahul shares an email: the planted duplicates. |
+
+The Expo (React Native) app at http://localhost:8081 has the original screens; the newer backlog features (signed-in devices, KYC rejection, the Phase 1 hand-over, the demo identity button) are in the web demo stage.
 
 ## How the linking decision works
 

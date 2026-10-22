@@ -1,5 +1,5 @@
 import { LitElement, html, nothing } from 'lit';
-import { ApiError } from './api.js';
+import { ApiError, loadPhase1, savePhase1 } from './api.js';
 import { base } from './shared.js';
 
 /** The Phase 1 login the apps fall back to while Shared Identity is switched off. */
@@ -25,11 +25,21 @@ export class SsPhase1 extends LitElement {
     this._busy = false;
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+    this._account = loadPhase1(this.variant);
+  }
+
+  _setAccount(account) {
+    this._account = account;
+    savePhase1(this.variant, account);
+  }
+
   async _signIn() {
     this._busy = true;
     this._error = null;
     try {
-      this._account = await this.api.phase1Login(this._identifier, this._password);
+      this._setAccount(await this.api.phase1Login(this._identifier, this._password));
     } catch (e) {
       this._error = e instanceof ApiError ? e.message : String(e);
     } finally {
@@ -54,7 +64,8 @@ export class SsPhase1 extends LitElement {
               ${a.partnerType ? html`<div class="kv"><span>Partner type</span><span>${a.partnerType}</span></div>` : nothing}
               ${a.kycStatus ? html`<div class="kv"><span>KYC</span><span>${a.kycStatus}</span></div>` : nothing}
             </div>
-            <button class="btn ghost" @click=${() => (this._account = null)}>Sign out</button>
+            <p class="hint">When Shared Identity is switched back on, this sign-in moves across by itself.</p>
+            <button class="btn ghost" @click=${() => this._setAccount(null)}>Sign out</button>
           </div>`
         : html`<div class="card stack">
             <h1>Sign in</h1>

@@ -118,7 +118,7 @@ public class Api(HttpClient http)
         ["grant_type"] = "refresh_token", ["client_id"] = client, ["refresh_token"] = refreshToken,
     });
 
-    private async Task<TokenResult> TokenAsync(Dictionary<string, string> form)
+    public async Task<TokenResult> TokenAsync(Dictionary<string, string> form)
     {
         var res = await http.PostAsync("/connect/token", new FormUrlEncodedContent(form));
         return new(res.StatusCode, await res.Content.ReadFromJsonAsync<JsonElement>());

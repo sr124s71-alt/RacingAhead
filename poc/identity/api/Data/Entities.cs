@@ -63,6 +63,9 @@ public class Kyc
     public string? SubmittedVia { get; set; }
     public DateTimeOffset? SubmittedAt { get; set; }
     public DateTimeOffset? VerifiedAt { get; set; }
+    /// <summary>Why an admin rejected the evidence (shown to the person so they can resubmit).</summary>
+    public string? RejectedReason { get; set; }
+    public DateTimeOffset? RejectedAt { get; set; }
 }
 
 public class OtpChallenge
@@ -77,6 +80,8 @@ public class OtpChallenge
     public int Attempts { get; set; }
     public DateTimeOffset? ConsumedAt { get; set; }
     public string? RequestIp { get; set; }
+    /// <summary>Device that asked for the code (X-Device-Id), for the per-device rate limit.</summary>
+    public string? DeviceId { get; set; }
 }
 
 /// <summary>Failure counter and lockout per identifier, to resist brute force across challenges.</summary>
@@ -115,4 +120,23 @@ public class LegacyIdMap
     public int LegacyId { get; set; }
     public Guid IdentityId { get; set; }
     public DateTimeOffset BootstrappedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+
+/// <summary>
+/// One signed-in device for one app. Access and refresh tokens carry its id ("sid"), so a single
+/// device can be signed out without touching the person's other devices (backlog F3-S03).
+/// </summary>
+public class DeviceSession
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid IdentityId { get; set; }
+    public string Client { get; set; } = "";
+    public string DeviceId { get; set; } = "";
+    public string DeviceName { get; set; } = "";
+    /// <summary>otp | password | phase1-migration</summary>
+    public string SignInMethod { get; set; } = "";
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset LastSeenAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? RevokedAt { get; set; }
+    public string? RevokedBy { get; set; }
 }

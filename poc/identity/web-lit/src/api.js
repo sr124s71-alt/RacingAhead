@@ -17,11 +17,29 @@ export class ApiError extends Error {
   }
 }
 
+/** Each app panel is its own device: a stable id per browser tab, and a readable name for the device list. */
+const DEVICE_NAMES = { user: 'Android phone', partner: 'iPhone', admin: 'Laptop browser' };
+
+export function deviceFor(variant) {
+  let id = null;
+  try {
+    id = sessionStorage.getItem('lit-device:' + variant);
+    if (!id) {
+      id = (crypto.randomUUID?.() ?? String(Math.random()).slice(2)).replace(/-/g, '');
+      sessionStorage.setItem('lit-device:' + variant, id);
+    }
+  } catch {
+    id ??= String(Math.random()).slice(2);
+  }
+  return { id, name: `${DEVICE_NAMES[variant]} · ${id.slice(0, 4).toUpperCase()}` };
+}
+
 export function makeApi(variant) {
   const clientId = CLIENT[variant];
+  const device = deviceFor(variant);
 
   async function request(path, init = {}, token) {
-    const headers = { 'X-App-Client': clientId, 'X-App-Version': APP_VERSION, ...(init.headers ?? {}) };
+    const headers = { 'X-App-Client': clientId, 'X-App-Version': APP_VERSION, 'X-Device-Id': device.id, ...(init.headers ?? {}) };
     if (token) headers.Authorization = `Bearer ${token}`;
     let res;
     try {
@@ -44,7 +62,7 @@ export function makeApi(variant) {
   });
 
   const token = (form) => {
-    const p = new URLSearchParams({ client_id: clientId, scope: 'offline_access profile roles' });
+    const p = new URLSearchParams({ client_id: clientId, scope: 'offline_access profile roles', device_id: device.id, device_name: device.name });
     Object.entries(form).forEach(([k, v]) => v !== undefined && v !== '' && p.set(k, v));
     return request('/connect/token', {
       method: 'POST',
@@ -55,7 +73,11 @@ export function makeApi(variant) {
 
   return {
     clientId,
+    device,
     config: () => request('/api/config'),
+    migratePhase1: (handover) => token({ grant_type: 'urn:sportseek:grant-type:phase1-session', phase1_session: handover }),
+    sessions: (t) => request('/api/me/sessions', {}, t),
+    revokeSession: (t, id) => request(`/api/me/sessions/${id}/revoke`, json('POST'), t),
     otpInbox: () => request('/api/dev/otp-inbox'),
     requestOtp: (identifier, role) => request('/api/otp/request', json('POST', { client: clientId, identifier, role })),
     otpToken: (challengeId, otp, role, name) =>
@@ -69,6 +91,7 @@ export function makeApi(variant) {
     admin: {
       identities: (t) => request('/api/admin/identities', {}, t),
       verifyKyc: (t, id) => request(`/api/admin/identities/${id}/kyc/verify`, json('POST'), t),
+      rejectKyc: (t, id, reason) => request(`/api/admin/identities/${id}/kyc/reject`, json('POST', { reason }), t),
       audit: (t) => request('/api/admin/audit?take=150', {}, t),
       flags: (t) => request('/api/admin/flags', {}, t),
       setFlags: (t, body) => request('/api/admin/flags', json('PUT', body), t),
@@ -117,5 +140,24 @@ export function saveSession(variant, tokens) {
     else sessionStorage.removeItem('lit-tokens:' + variant);
   } catch {
     // storage unavailable: session stays in memory
+  }
+}
+
+// The Phase 1 session (while F3 is off) is kept per app, so it can move onto Shared Identity when F3 is switched on.
+export function loadPhase1(variant) {
+  try {
+    const raw = sessionStorage.getItem('lit-phase1:' + variant);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function savePhase1(variant, account) {
+  try {
+    if (account) sessionStorage.setItem('lit-phase1:' + variant, JSON.stringify(account));
+    else sessionStorage.removeItem('lit-phase1:' + variant);
+  } catch {
+    // storage unavailable
   }
 }

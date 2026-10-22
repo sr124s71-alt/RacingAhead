@@ -41,7 +41,10 @@ public class Phase1Store(IdentityDb db)
 }
 
 public sealed record BootstrapReport(int Phase1UserApp, int Phase1PartnerApp, int IdentitiesCreated, int AlreadyMapped,
-    int InvalidIdentifiers, List<DuplicateGroup> DuplicateCandidates);
+    int InvalidIdentifiers, List<DuplicateGroup> DuplicateCandidates, Reconciliation Reconciliation);
+
+/// <summary>F3-S04: after the bootstrap, Phase 1 account count must equal the number of mapped identities (before dedup).</summary>
+public sealed record Reconciliation(int Phase1Accounts, int MappedIdentities, bool Matches);
 
 public sealed record DuplicateGroup(string Type, string Value, List<DuplicateMember> Identities);
 
@@ -52,7 +55,7 @@ public sealed record DuplicateMember(Guid IdentityId, string DisplayName, string
 /// Duplicates are NOT merged in R1 (that needs SportSeek-approved merge rules, R2); they are reported.
 /// Bootstrapped contacts are unverified until the person proves ownership by OTP.
 /// </summary>
-public class BootstrapService(IdentityDb db, Phase1Store phase1, AuditLog audit)
+public class BootstrapService(IdentityDb db, Phase1Store phase1, AuditLog audit, LinkingService linking)
 {
     public async Task<BootstrapReport> RunAsync()
     {
@@ -64,50 +67,81 @@ public class BootstrapService(IdentityDb db, Phase1Store phase1, AuditLog audit)
         foreach (var a in accounts)
         {
             if (mapped.Contains((a.App, a.Id))) { skipped++; continue; }
-
-            var fromPartner = a.App == Apps.PartnerApp;
-            var identity = new AppIdentity
-            {
-                Id = Guid.NewGuid(),
-                DisplayName = a.Name,
-                Source = fromPartner ? IdentitySources.LegacyPartnerApp : IdentitySources.LegacyUserApp,
-                CreatedVia = "bootstrap",
-                CreatedAt = a.CreatedAt,
-                SecurityStamp = Guid.NewGuid().ToString("N"),
-            };
-            identity.UserName = identity.Id.ToString("N");
-            identity.NormalizedUserName = identity.UserName.ToUpperInvariant();
-
-            foreach (var raw in new[] { a.Mobile, a.Email })
-            {
-                if (raw is null) continue;
-                var id = Identifiers.TryNormalise(raw);
-                if (id is null) { invalid++; continue; }
-                identity.Contacts.Add(new Contact { Type = id.Type, Value = id.Value, Verified = false, Source = "legacy-bootstrap" });
-            }
-
-            identity.Roles.Add(new RoleAssignment
-            {
-                Role = fromPartner ? PartnerRole(a.PartnerType) : Roles.Player,
-                GrantedVia = "bootstrap",
-                GrantedAt = a.CreatedAt,
-            });
-            identity.Kyc = a.KycStatus == "verified"
-                ? new Kyc { Status = "Verified", DocType = "Phase 1 record", SubmittedVia = a.App, VerifiedAt = a.CreatedAt }
-                : new Kyc();
-
-            db.Users.Add(identity);
-            db.LegacyIdMap.Add(new LegacyIdMap { LegacyApp = a.App, LegacyId = a.Id, IdentityId = identity.Id });
+            invalid += Create(a).InvalidIdentifiers;
             created++;
         }
 
         await db.SaveChangesAsync();
         var duplicates = await DuplicatesAsync();
+        var mappedNow = await db.LegacyIdMap.CountAsync();
+        var reconciliation = new Reconciliation(accounts.Count, mappedNow, accounts.Count == mappedNow);
         var report = new BootstrapReport(accounts.Count(a => a.App == Apps.UserApp), accounts.Count(a => a.App == Apps.PartnerApp),
-            created, skipped, invalid, duplicates);
-        audit.Add(AuditActions.BootstrapRun, detail: new { created, skipped, invalid, duplicateGroups = duplicates.Count });
+            created, skipped, invalid, duplicates, reconciliation);
+        audit.Add(AuditActions.BootstrapRun, detail: new
+        {
+            created, skipped, invalid, duplicateGroups = duplicates.Count,
+            reconciliation = $"{reconciliation.Phase1Accounts} Phase 1 accounts, {reconciliation.MappedIdentities} identities",
+        });
         await db.SaveChangesAsync();
         return report;
+    }
+
+    /// <summary>
+    /// The identity for one Phase 1 account, bootstrapping just that account if the full run hasn't
+    /// happened yet. Used to move a signed-in Phase 1 session onto Shared Identity (F3-S05).
+    /// </summary>
+    public async Task<AppIdentity?> EnsureAccountAsync(string app, int legacyId)
+    {
+        var map = await db.LegacyIdMap.FirstOrDefaultAsync(m => m.LegacyApp == app && m.LegacyId == legacyId);
+        if (map is null)
+        {
+            var account = (await phase1.AllAsync()).FirstOrDefault(a => a.App == app && a.Id == legacyId);
+            if (account is null) return null;
+            var (identity, _) = Create(account);
+            audit.Add(AuditActions.Phase1AccountBootstrapped, identity.Id, app, new { legacyId, reason = "Signed-in Phase 1 session moved to Shared Identity" });
+            await db.SaveChangesAsync();
+            return await linking.WithGraph().FirstAsync(i => i.Id == identity.Id);
+        }
+        return await linking.WithGraph().FirstOrDefaultAsync(i => i.Id == map.IdentityId);
+    }
+
+    private (AppIdentity Identity, int InvalidIdentifiers) Create(LegacyAccount a)
+    {
+        var fromPartner = a.App == Apps.PartnerApp;
+        var identity = new AppIdentity
+        {
+            Id = Guid.NewGuid(),
+            DisplayName = a.Name,
+            Source = fromPartner ? IdentitySources.LegacyPartnerApp : IdentitySources.LegacyUserApp,
+            CreatedVia = "bootstrap",
+            CreatedAt = a.CreatedAt,
+            SecurityStamp = Guid.NewGuid().ToString("N"),
+        };
+        identity.UserName = identity.Id.ToString("N");
+        identity.NormalizedUserName = identity.UserName.ToUpperInvariant();
+
+        var invalid = 0;
+        foreach (var raw in new[] { a.Mobile, a.Email })
+        {
+            if (raw is null) continue;
+            var id = Identifiers.TryNormalise(raw);
+            if (id is null) { invalid++; continue; }
+            identity.Contacts.Add(new Contact { Type = id.Type, Value = id.Value, Verified = false, Source = "legacy-bootstrap" });
+        }
+
+        identity.Roles.Add(new RoleAssignment
+        {
+            Role = fromPartner ? PartnerRole(a.PartnerType) : Roles.Player,
+            GrantedVia = "bootstrap",
+            GrantedAt = a.CreatedAt,
+        });
+        identity.Kyc = a.KycStatus == "verified"
+            ? new Kyc { Status = "Verified", DocType = "Phase 1 record", SubmittedVia = a.App, VerifiedAt = a.CreatedAt }
+            : new Kyc();
+
+        db.Users.Add(identity);
+        db.LegacyIdMap.Add(new LegacyIdMap { LegacyApp = a.App, LegacyId = a.Id, IdentityId = identity.Id });
+        return (identity, invalid);
     }
 
     /// <summary>Same normalised phone or email held by more than one identity: candidates for the R2 merge.</summary>

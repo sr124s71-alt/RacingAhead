@@ -1,6 +1,6 @@
 import { LitElement, css, html, nothing } from 'lit';
 import { ApiError, decodeJwt } from './api.js';
-import { APPS, APP_LABEL, ROLE_APP, ROLE_LABEL, base, date, mark } from './shared.js';
+import { APPS, APP_LABEL, CLIENT_VARIANT, ROLE_APP, ROLE_LABEL, base, date, mark, time } from './shared.js';
 
 const OUTCOME = {
   Created: ['ok', 'Welcome to SportSeek', (r) => `Your account was created with the ${r} role.`],
@@ -8,6 +8,11 @@ const OUTCOME = {
     'warn',
     'Linked to your existing SportSeek account',
     (r) => `We found your account and added ${r} to it. No new account was created: your profile and KYC are shared.`,
+  ],
+  Migrated: [
+    'info',
+    'Moved to Shared Identity',
+    () => 'Shared Identity was switched on, so your Phase 1 sign-in moved across. You did not have to sign in again.',
   ],
   ClaimedLegacy: [
     'info',
@@ -25,6 +30,7 @@ export class SsProfile extends LitElement {
     tokens: { attribute: false },
     variant: {},
     _me: { state: true },
+    _devices: { state: true },
     _error: { state: true },
     _showToken: { state: true },
     _docType: { state: true },
@@ -173,6 +179,43 @@ export class SsProfile extends LitElement {
         font-size: 12px;
         font-weight: 600;
       }
+      .device .who {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1;
+      }
+      .device .name {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: var(--text);
+        font-weight: 650;
+      }
+      .device .meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .device > :last-child {
+        flex: none;
+        white-space: nowrap;
+      }
+      .app-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex: none;
+      }
+      .app-dot.user {
+        background: var(--user);
+      }
+      .app-dot.partner {
+        background: var(--partner);
+      }
+      .app-dot.admin {
+        background: var(--admin);
+      }
       .linkbtn {
         border: 0;
         background: none;
@@ -186,6 +229,7 @@ export class SsProfile extends LitElement {
   constructor() {
     super();
     this._me = null;
+    this._devices = [];
     this._error = null;
     this._showToken = false;
     this._docType = 'PAN';
@@ -212,7 +256,10 @@ export class SsProfile extends LitElement {
 
   async _load() {
     try {
-      this._me = await this.api.me(this.tokens.access_token);
+      [this._me, this._devices] = await Promise.all([
+        this.api.me(this.tokens.access_token),
+        this.api.sessions(this.tokens.access_token),
+      ]);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) this._emit('sign-out');
       else this._error = e.message;
@@ -324,6 +371,9 @@ export class SsProfile extends LitElement {
           <span class="badge ${KYC_TONE[kyc.status]}">${kyc.status === 'NotStarted' ? 'Not started' : kyc.status}</span>
         </div>
         <p class="muted">Verify once, and it's reused by every role and app on your account.</p>
+        ${kyc.status === 'Rejected' && kyc.rejectedReason
+          ? html`<div class="notice danger"><b>Not accepted</b>${kyc.rejectedReason}. Please submit it again.</div>`
+          : nothing}
         ${kyc.status === 'NotStarted' || kyc.status === 'Rejected'
           ? html`<div class="row">
                 ${['PAN', 'Aadhaar', 'GSTIN'].map(
@@ -382,6 +432,34 @@ export class SsProfile extends LitElement {
         >
           ${this._busy === 'pw' ? 'Saving…' : 'Save password'}
         </button>
+      </section>
+
+      <section class="card">
+        <span class="eyebrow">Signed-in devices</span>
+        <p class="muted" style="margin-bottom:6px">Sign out a lost or old device here. Your other devices stay signed in.</p>
+        ${(this._devices ?? [])
+          .filter((d) => d.active)
+          .map(
+            (d) => html`<div class="kv device">
+              <span class="who">
+                <span class="name"><span class="app-dot ${CLIENT_VARIANT[d.client]}"></span>${d.deviceName}</span>
+                <span class="meta">${APP_LABEL[d.client]} · last seen ${time(d.lastSeenAt)}</span>
+              </span>
+              ${d.current
+                ? html`<span class="badge info">This device</span>`
+                : html`<button
+                    class="btn ghost sm"
+                    ?disabled=${this._busy === d.sessionId}
+                    @click=${() =>
+                      this._act(d.sessionId, async () => {
+                        await this.api.revokeSession(this.tokens.access_token, d.sessionId);
+                        await this._load();
+                      })}
+                  >
+                    Sign out
+                  </button>`}
+            </div>`,
+          )}
       </section>
 
       <section class="card claims">

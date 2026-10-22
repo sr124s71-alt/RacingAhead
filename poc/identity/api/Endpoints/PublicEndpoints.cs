@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using SportSeek.Identity.Api.Data;
 using SportSeek.Identity.Api.Domain;
 
@@ -31,11 +32,15 @@ public static class PublicEndpoints
             var id = Identifiers.TryNormalise(body.Identifier);
             if (id is null) return Problem(400, "invalid_identifier", "Enter a valid Indian mobile number or email address.");
 
-            var (challenge, error, lockedUntil) = await otp.RequestAsync(client, id, ctx.Connection.RemoteIpAddress?.ToString());
+            var deviceId = ctx.Request.Headers["X-Device-Id"].ToString();
+            var (challenge, error, lockedUntil) = await otp.RequestAsync(client, id, ctx.Connection.RemoteIpAddress?.ToString(),
+                string.IsNullOrWhiteSpace(deviceId) ? null : deviceId[..Math.Min(deviceId.Length, 100)]);
             if (error == OtpError.LockedOut)
                 return Problem(423, "locked_out", $"Too many incorrect codes for this number. Try again after {lockedUntil:HH:mm} UTC.");
             if (error == OtpError.RateLimited)
                 return Problem(429, "rate_limited", "Too many codes requested for this number. Please wait and try again.");
+            if (error == OtpError.DeviceRateLimited)
+                return Problem(429, "device_rate_limited", "Too many codes requested from this device. Please wait and try again.");
 
             var lookup = await linking.LookupAsync(client, id);
             var role = body.Role is not null && client.AllowedRoles.Contains(body.Role) ? body.Role : client.DefaultRole;
@@ -71,7 +76,8 @@ public static class PublicEndpoints
         }).RequireRateLimiting("otp");
 
         // Fallback: the Phase 1 login, used by the apps while F3 is switched off.
-        app.MapPost("/api/phase1/login", async (Phase1LoginBody body, Phase1Store phase1, AuditLog audit, IdentityDb db) =>
+        app.MapPost("/api/phase1/login", async (Phase1LoginBody body, Phase1Store phase1, AuditLog audit, IdentityDb db,
+            IDataProtectionProvider protection) =>
         {
             var id = Identifiers.TryNormalise(body.Identifier);
             var hash = Seeder.Sha256(body.Password ?? "");
@@ -82,9 +88,13 @@ public static class PublicEndpoints
 
             audit.Add(AuditActions.LegacyLogin, client: body.Client, detail: new { legacyId = account.Id });
             await db.SaveChangesAsync();
+            // Lets the app move this session onto Shared Identity when F3 is switched on (F3-S05), without a new sign-in.
+            var migrationToken = protection.CreateProtector(TokenEndpoint.Phase1SessionPurpose).ToTimeLimitedDataProtector()
+                .Protect($"{account.App}|{account.Id}", TimeSpan.FromHours(12));
             return Results.Ok(new
             {
                 mode = "phase1",
+                migrationToken,
                 account.App, legacyId = account.Id, account.Name, account.BusinessName, account.PartnerType, account.KycStatus,
             });
         });

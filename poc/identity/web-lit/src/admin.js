@@ -14,6 +14,10 @@ const ACTION_TONE = {
   FLAG_CHANGED: 'info',
   BOOTSTRAP_RUN: 'info',
   DEMO_RESET: 'info',
+  KYC_REJECTED: 'danger',
+  DEVICE_SIGNED_OUT: 'warn',
+  PHASE1_SESSION_MIGRATED: 'info',
+  PHASE1_ACCOUNT_BOOTSTRAPPED: 'info',
 };
 
 const TABS = [
@@ -41,6 +45,8 @@ export class SsAdmin extends LitElement {
     _hideOtp: { state: true },
     _busy: { state: true },
     _error: { state: true },
+    _rejecting: { state: true },
+    _reason: { state: true },
   };
 
   static styles = [
@@ -270,6 +276,8 @@ export class SsAdmin extends LitElement {
     this._hideOtp = true;
     this._busy = null;
     this._error = null;
+    this._rejecting = null;
+    this._reason = '';
   }
 
   get _t() {
@@ -348,12 +356,41 @@ export class SsAdmin extends LitElement {
               >${i.kyc.status === 'NotStarted' ? 'Not started' : i.kyc.status}</span
             >
             ${i.kyc.docType ? html`<span class="muted">${i.kyc.docType} ${i.kyc.docRefMasked ?? ''}</span>` : nothing}
-            ${i.kyc.status === 'Submitted'
+            ${i.kyc.status === 'Submitted' && this._rejecting !== i.identityId
               ? html`<button class="btn sm" @click=${() => this.api.admin.verifyKyc(this._t, i.identityId).then(() => this._refresh())}>
-                  Verify KYC
-                </button>`
+                    Verify KYC
+                  </button>
+                  <button class="btn ghost sm" @click=${() => ((this._rejecting = i.identityId), (this._reason = ''))}>Reject…</button>`
               : nothing}
           </div>
+          ${this._rejecting === i.identityId
+            ? html`<div class="row" style="gap:8px">
+                <input
+                  id="reject-${i.identityId}"
+                  style="flex:1;min-width:180px;padding:8px 10px;font-size:14px"
+                  placeholder="Reason shown to the person, e.g. PAN image is blurred"
+                  .value=${this._reason}
+                  @input=${(e) => (this._reason = e.target.value)}
+                />
+                <button
+                  class="btn danger sm"
+                  ?disabled=${this._reason.trim().length < 5}
+                  @click=${() =>
+                    this.api.admin
+                      .rejectKyc(this._t, i.identityId, this._reason.trim())
+                      .then(() => ((this._rejecting = null), this._refresh()), (e) => (this._error = e.message))}
+                >
+                  Reject with reason
+                </button>
+                <button class="btn ghost sm" @click=${() => (this._rejecting = null)}>Cancel</button>
+              </div>`
+            : nothing}
+          ${i.kyc.status === 'Rejected' && i.kyc.rejectedReason ? html`<div class="muted">Rejected: ${i.kyc.rejectedReason}</div>` : nothing}
+          ${i.devices?.length
+            ? html`<div class="muted">
+                Signed in on ${i.devices.map((d) => `${d.deviceName} (${APP_LABEL[d.client]})`).join(', ')}
+              </div>`
+            : nothing}
         </div>
       </div>`,
     );
@@ -409,6 +446,10 @@ export class SsAdmin extends LitElement {
               <b>Bootstrap complete</b>${r.identitiesCreated} identities created from ${r.phase1UserApp} User App and ${r.phase1PartnerApp} Partner
               App accounts${r.alreadyMapped ? ` (${r.alreadyMapped} already loaded)` : ''}. ${r.duplicateCandidates.length} duplicate candidate
               group(s).
+            </div>
+            <div class="notice ${r.reconciliation.matches ? 'ok' : 'danger'}">
+              <b>Reconciliation ${r.reconciliation.matches ? 'matches' : 'does NOT match'}</b>${r.reconciliation.phase1Accounts} Phase 1
+              accounts = ${r.reconciliation.mappedIdentities} identities, before the R2 duplicate merge.
             </div>`
           : nothing}
         <button

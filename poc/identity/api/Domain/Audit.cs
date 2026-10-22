@@ -22,6 +22,10 @@ public static class AuditActions
     public const string FlagChanged = "FLAG_CHANGED";
     public const string LegacyLogin = "PHASE1_LOGIN";
     public const string DemoReset = "DEMO_RESET";
+    public const string DeviceSignedOut = "DEVICE_SIGNED_OUT";
+    public const string KycRejected = "KYC_REJECTED";
+    public const string Phase1SessionMigrated = "PHASE1_SESSION_MIGRATED";
+    public const string Phase1AccountBootstrapped = "PHASE1_ACCOUNT_BOOTSTRAPPED";
 }
 
 /// <summary>Every identity and linking decision is written to identity.audit_log (TA §6.1 step 6).</summary>

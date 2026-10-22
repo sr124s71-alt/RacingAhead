@@ -24,6 +24,22 @@ public static class MeEndpoints
             return identity is null ? Results.Unauthorized() : Results.Ok(Profile(identity, user.FindFirstValue("app")));
         });
 
+        // Signed-in devices across all of this person's apps; any one can be signed out on its own (F3-S03).
+        me.MapGet("/sessions", async (ClaimsPrincipal user, SessionService sessions) =>
+        {
+            if (!Guid.TryParse(user.FindFirstValue(Claims.Subject), out var id)) return Results.Unauthorized();
+            var current = Guid.TryParse(user.FindFirstValue(SessionService.SessionClaim), out var sid) ? sid : (Guid?)null;
+            return Results.Ok((await sessions.ListAsync(id)).Select(s => SessionService.View(s, current)));
+        });
+
+        me.MapPost("/sessions/{sessionId:guid}/revoke", async (Guid sessionId, ClaimsPrincipal user, SessionService sessions) =>
+        {
+            if (!Guid.TryParse(user.FindFirstValue(Claims.Subject), out var id)) return Results.Unauthorized();
+            return await sessions.RevokeAsync(id, sessionId, $"you, from the {Apps.Find(user.FindFirstValue("app"))?.DisplayName ?? "app"}")
+                ? Results.Ok(new { revoked = true })
+                : PublicEndpoints.Problem(404, "not_found", "That device is already signed out.");
+        });
+
         me.MapPut("/profile", async (ProfileBody body, ClaimsPrincipal user, LinkingService linking, AuditLog audit, IdentityDb db) =>
         {
             var identity = await Load(user, linking);
@@ -50,6 +66,9 @@ public static class MeEndpoints
             identity.Kyc.DocRefMasked = new string('•', number.Length - 4) + number[^4..];
             identity.Kyc.SubmittedVia = user.FindFirstValue("app");
             identity.Kyc.SubmittedAt = DateTimeOffset.UtcNow;
+            identity.Kyc.VerifiedAt = null;
+            identity.Kyc.RejectedReason = null;
+            identity.Kyc.RejectedAt = null;
             audit.Add(AuditActions.KycSubmitted, identity.Id, identity.Kyc.SubmittedVia, new { body.DocType, doc = identity.Kyc.DocRefMasked });
             await db.SaveChangesAsync();
             return Results.Ok(Profile(identity, user.FindFirstValue("app")));
@@ -76,7 +95,7 @@ public static class MeEndpoints
             ? await linking.WithGraph().FirstOrDefaultAsync(i => i.Id == id)
             : null;
 
-    public static object Profile(AppIdentity i, string? currentApp)
+    public static object Profile(AppIdentity i, string? currentApp, List<object>? devices = null)
     {
         var appRoles = Apps.Find(currentApp)?.AllowedRoles ?? [];
         return new
@@ -104,7 +123,10 @@ public static class MeEndpoints
                 i.Kyc?.SubmittedVia,
                 i.Kyc?.SubmittedAt,
                 i.Kyc?.VerifiedAt,
+                i.Kyc?.RejectedReason,
+                i.Kyc?.RejectedAt,
             },
+            devices,
         };
     }
 }

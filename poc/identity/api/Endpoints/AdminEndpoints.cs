@@ -8,6 +8,7 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 namespace SportSeek.Identity.Api.Endpoints;
 
 public sealed record FlagsBody(bool? SharedIdentityEnabled, string? MinAppVersion);
+public sealed record KycRejectBody(string Reason);
 
 public static class AdminEndpoints
 {
@@ -15,10 +16,27 @@ public static class AdminEndpoints
     {
         var admin = app.MapGroup("/api/admin").RequireAuthorization("Admin");
 
-        admin.MapGet("/identities", async (LinkingService linking) =>
+        // F3-S06: every identity's roles, verified contacts, KYC and signed-in devices in one place.
+        admin.MapGet("/identities", async (LinkingService linking, IdentityDb db) =>
         {
             var list = await linking.WithGraph().OrderByDescending(i => i.CreatedAt).ToListAsync();
-            return list.Select(i => MeEndpoints.Profile(i, null));
+            var devices = (await db.DeviceSessions.Where(d => d.RevokedAt == null).ToListAsync()).ToLookup(d => d.IdentityId);
+            return list.Select(i => MeEndpoints.Profile(i, null,
+                devices[i.Id].OrderByDescending(d => d.LastSeenAt).Select(d => SessionService.View(d, null)).ToList()));
+        });
+
+        admin.MapPost("/identities/{id:guid}/kyc/reject", async (Guid id, KycRejectBody body, ClaimsPrincipal user, IdentityDb db, AuditLog audit) =>
+        {
+            var reason = (body.Reason ?? "").Trim();
+            if (reason.Length < 5) return PublicEndpoints.Problem(400, "reason_required", "Give the person a reason (at least 5 characters) so they can fix it.");
+            var kyc = await db.Kyc.FindAsync(id);
+            if (kyc is null || kyc.Status != "Submitted") return PublicEndpoints.Problem(409, "not_submitted", "KYC has not been submitted.");
+            kyc.Status = "Rejected";
+            kyc.RejectedReason = reason;
+            kyc.RejectedAt = DateTimeOffset.UtcNow;
+            audit.Add(AuditActions.KycRejected, id, Apps.AdminPortal, new { by = user.FindFirstValue(Claims.Name), reason });
+            await db.SaveChangesAsync();
+            return Results.Ok(new { kyc.Status });
         });
 
         admin.MapPost("/identities/{id:guid}/kyc/verify", async (Guid id, ClaimsPrincipal user, IdentityDb db, AuditLog audit) =>
@@ -27,6 +45,8 @@ public static class AdminEndpoints
             if (kyc is null || kyc.Status != "Submitted") return PublicEndpoints.Problem(409, "not_submitted", "KYC has not been submitted.");
             kyc.Status = "Verified";
             kyc.VerifiedAt = DateTimeOffset.UtcNow;
+            kyc.RejectedReason = null;
+            kyc.RejectedAt = null;
             audit.Add(AuditActions.KycVerified, id, Apps.AdminPortal, new { by = user.FindFirstValue(Claims.Name) });
             await db.SaveChangesAsync();
             return Results.Ok(new { kyc.Status });

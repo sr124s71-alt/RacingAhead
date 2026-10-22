@@ -14,9 +14,10 @@ public class OtpOptions
     public int LockoutMinutes { get; set; } = 15;
     public int MaxRequestsPerIdentifierPerWindow { get; set; } = 5;
     public int RequestWindowMinutes { get; set; } = 15;
+    public int MaxRequestsPerDevicePerWindow { get; set; } = 10;
 }
 
-public enum OtpError { None, RateLimited, LockedOut, NotFound, Expired, WrongCode, TooManyAttempts }
+public enum OtpError { None, RateLimited, DeviceRateLimited, LockedOut, NotFound, Expired, WrongCode, TooManyAttempts }
 
 public sealed record OtpVerification(OtpError Error, NormalisedIdentifier? Identifier = null, int AttemptsLeft = 0, DateTimeOffset? LockedUntil = null)
 {
@@ -33,7 +34,7 @@ public class OtpService(IdentityDb db, AuditLog audit, DevOtpInbox inbox, IConfi
     private readonly OtpOptions _o = config.GetSection("Otp").Get<OtpOptions>() ?? new OtpOptions();
 
     public async Task<(OtpChallenge? Challenge, OtpError Error, DateTimeOffset? LockedUntil)> RequestAsync(
-        AppClient client, NormalisedIdentifier id, string? ip)
+        AppClient client, NormalisedIdentifier id, string? ip, string? deviceId = null)
     {
         var now = DateTimeOffset.UtcNow;
 
@@ -44,6 +45,13 @@ public class OtpService(IdentityDb db, AuditLog audit, DevOtpInbox inbox, IConfi
         var recent = await db.OtpChallenges.CountAsync(c => c.Destination == id.Value && c.CreatedAt > windowStart);
         if (recent >= _o.MaxRequestsPerIdentifierPerWindow) return (null, OtpError.RateLimited, null);
 
+        // Per device as well as per number and per IP (F3-S01): one phone can't spray codes at many numbers.
+        if (!string.IsNullOrEmpty(deviceId))
+        {
+            var fromDevice = await db.OtpChallenges.CountAsync(c => c.DeviceId == deviceId && c.CreatedAt > windowStart);
+            if (fromDevice >= _o.MaxRequestsPerDevicePerWindow) return (null, OtpError.DeviceRateLimited, null);
+        }
+
         var code = RandomNumberGenerator.GetInt32(0, (int)Math.Pow(10, _o.Length)).ToString().PadLeft(_o.Length, '0');
         var challenge = new OtpChallenge
         {
@@ -52,6 +60,7 @@ public class OtpService(IdentityDb db, AuditLog audit, DevOtpInbox inbox, IConfi
             Destination = id.Value,
             ExpiresAt = now.AddMinutes(_o.TtlMinutes),
             RequestIp = ip,
+            DeviceId = deviceId,
         };
         challenge.CodeHash = Hash(challenge.Id, code);
         db.OtpChallenges.Add(challenge);

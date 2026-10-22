@@ -22,6 +22,7 @@ public class IdentityDb(DbContextOptions<IdentityDb> options) : IdentityUserCont
     public DbSet<AuditEntry> Audit => Set<AuditEntry>();
     public DbSet<FeatureFlag> FeatureFlags => Set<FeatureFlag>();
     public DbSet<LegacyIdMap> LegacyIdMap => Set<LegacyIdMap>();
+    public DbSet<DeviceSession> DeviceSessions => Set<DeviceSession>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -81,6 +82,14 @@ public class IdentityDb(DbContextOptions<IdentityDb> options) : IdentityUserCont
         });
 
         b.Entity<FeatureFlag>(e => { e.ToTable("feature_flags"); e.HasKey(f => f.Key); });
+
+        b.Entity<DeviceSession>(e =>
+        {
+            e.ToTable("device_sessions");
+            e.Property(d => d.Id).ValueGeneratedNever();
+            e.HasOne<AppIdentity>().WithMany().HasForeignKey(d => d.IdentityId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(d => d.IdentityId);
+        });
 
         b.Entity<LegacyIdMap>(e =>
         {

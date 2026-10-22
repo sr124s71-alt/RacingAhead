@@ -27,6 +27,8 @@ interface Kyc {
   submittedVia: string | null;
   submittedAt: string | null;
   verifiedAt: string | null;
+  rejectedReason: string | null;
+  rejectedAt: string | null;
 }
 interface Identity {
   id: string;
@@ -51,6 +53,7 @@ interface Challenge {
   expiresAt: number;
   attempts: number;
   consumed: boolean;
+  deviceId: string | null;
 }
 interface Lockout {
   failed: number;
@@ -71,6 +74,20 @@ interface Session {
   client: string;
   roles: string[];
   exp: number;
+  sid: string;
+}
+/** One signed-in device for one app (backlog F3-S03), as identity.device_sessions in the API. */
+interface DeviceSession {
+  id: string;
+  identityId: string;
+  client: string;
+  deviceId: string;
+  deviceName: string;
+  signInMethod: string;
+  createdAt: string;
+  lastSeenAt: string;
+  revokedAt: string | null;
+  revokedBy: string | null;
 }
 interface State {
   identities: Identity[];
@@ -82,11 +99,15 @@ interface State {
   legacyMap: { app: string; legacyId: number; identityId: string }[];
   inbox: { at: string; challengeId: string; channel: string; to: string; client: string; code: string; text: string }[];
   access: Record<string, Session>;
-  refresh: Record<string, { sub: string; client: string }>;
+  refresh: Record<string, { sub: string; client: string; sid: string }>;
+  devices: DeviceSession[];
 }
 
 const ADMIN_PHONE = '+919000000001';
-const OTP = { ttlMin: 5, maxAttempts: 5, maxFailures: 5, lockoutMin: 15, maxRequests: 5, windowMin: 15 };
+const ADMIN_PASSWORD = 'Admin@2026';
+const DEMO_PHONE = '+919000000002';
+const DEMO_PASSWORD = 'Demo@2026';
+const OTP = { ttlMin: 5, maxAttempts: 5, maxFailures: 5, lockoutMin: 15, maxRequests: 5, windowMin: 15, maxPerDevice: 10 };
 const MIN = 60_000;
 
 const APPS: Record<string, { name: string; defaultRole: string; roles: string[]; gated: boolean }> = {
@@ -229,7 +250,7 @@ const PHASE1_PASSWORD = 'demo1234';
 
 // ---------------------------------------------------------------- state
 
-const STORE_KEY = 'sportseek-identity-proto-v1';
+const STORE_KEY = 'sportseek-identity-proto-v2';
 let state: State = load() ?? fresh();
 
 function fresh(): State {
@@ -242,13 +263,14 @@ function fresh(): State {
         source: 'native',
         createdVia: 'seed',
         createdAt: now,
-        password: null,
+        password: ADMIN_PASSWORD,
         failedPasswords: 0,
         lockedUntil: null,
         contacts: [{ type: 'phone', value: ADMIN_PHONE, verified: true, verifiedAt: now, source: 'seed' }],
         roles: [{ role: 'Admin', grantedVia: 'seed', grantedAt: now }],
         kyc: emptyKyc(),
       },
+      demoIdentity(),
     ],
     challenges: [],
     lockouts: {},
@@ -259,6 +281,61 @@ function fresh(): State {
     inbox: [],
     access: {},
     refresh: {},
+    devices: [],
+  };
+}
+
+/** Kavya: one identity already holding a User App role and a Partner App role, KYC verified once, one password. */
+function demoIdentity(): Identity {
+  const day = 86_400_000;
+  const at = (daysAgo: number) => new Date(Date.now() - daysAgo * day).toISOString();
+  return {
+    id: uuid(),
+    displayName: 'Kavya Reddy',
+    source: 'native',
+    createdVia: 'user-app',
+    createdAt: at(40),
+    password: DEMO_PASSWORD,
+    failedPasswords: 0,
+    lockedUntil: null,
+    contacts: [
+      { type: 'phone', value: DEMO_PHONE, verified: true, verifiedAt: at(40), source: 'seed' },
+      { type: 'email', value: 'kavya.reddy@example.com', verified: true, verifiedAt: at(40), source: 'seed' },
+    ],
+    roles: [
+      { role: 'Player', grantedVia: 'user-app', grantedAt: at(40) },
+      { role: 'Coach', grantedVia: 'partner-app', grantedAt: at(12) },
+    ],
+    kyc: {
+      status: 'Verified', docType: 'PAN', docRefMasked: '••••••567K', submittedVia: 'partner-app',
+      submittedAt: at(12), verifiedAt: at(11), rejectedReason: null, rejectedAt: null,
+    },
+  };
+}
+
+// ---------------------------------------------------------------- devices
+
+function startSession(identityId: string, client: string, deviceId: string | null, deviceName: string | null, method: string): string {
+  const id = (deviceId ?? '').trim() || uuid();
+  const name = (deviceName ?? '').trim() || 'Unknown device';
+  const now = new Date().toISOString();
+  let s = state.devices.find((d) => d.identityId === identityId && d.client === client && d.deviceId === id && !d.revokedAt);
+  if (!s) {
+    s = { id: uuid(), identityId, client, deviceId: id, deviceName: name, signInMethod: method, createdAt: now, lastSeenAt: now, revokedAt: null, revokedBy: null };
+    state.devices.push(s);
+  }
+  s.deviceName = name;
+  s.signInMethod = method;
+  s.lastSeenAt = now;
+  return s.id;
+}
+
+const activeDevice = (sid: string) => state.devices.find((d) => d.id === sid && !d.revokedAt) ?? null;
+
+function deviceView(d: DeviceSession, currentSid: string | null) {
+  return {
+    sessionId: d.id, client: d.client, deviceName: d.deviceName, signInMethod: d.signInMethod, createdAt: d.createdAt,
+    lastSeenAt: d.lastSeenAt, revokedAt: d.revokedAt, active: !d.revokedAt, current: d.id === currentSid,
   };
 }
 
@@ -280,7 +357,7 @@ function save() {
 }
 
 function emptyKyc(): Kyc {
-  return { status: 'NotStarted', docType: null, docRefMasked: null, submittedVia: null, submittedAt: null, verifiedAt: null };
+  return { status: 'NotStarted', docType: null, docRefMasked: null, submittedVia: null, submittedAt: null, verifiedAt: null, rejectedReason: null, rejectedAt: null };
 }
 
 function uuid(): string {
@@ -430,7 +507,7 @@ function b64url(s: string) {
     .replace(/=+$/, '');
 }
 
-function issue(identity: Identity, client: string, outcome: string, roleAdded?: string) {
+function issue(identity: Identity, client: string, outcome: string, roleAdded: string | undefined, sid: string) {
   const roles = identity.roles
     .map((r) => r.role)
     .filter((r) => APPS[client].roles.includes(r))
@@ -448,12 +525,13 @@ function issue(identity: Identity, client: string, outcome: string, roleAdded?: 
     exp: iat + 15 * 60,
     client_id: client,
     jti: uuid(),
+    sid,
   };
   if (roleAdded) claims.role_added = roleAdded;
   const access = `${b64url(JSON.stringify({ alg: 'none', typ: 'JWT' }))}.${b64url(JSON.stringify(claims))}.prototype`;
   const refresh = uuid();
-  state.access[access] = { sub: identity.id, client, roles, exp: (iat + 15 * 60) * 1000 };
-  state.refresh[refresh] = { sub: identity.id, client };
+  state.access[access] = { sub: identity.id, client, roles, exp: (iat + 15 * 60) * 1000, sid };
+  state.refresh[refresh] = { sub: identity.id, client, sid };
   return { access_token: access, token_type: 'Bearer', expires_in: 900, refresh_token: refresh };
 }
 
@@ -475,10 +553,15 @@ const tokenError = (error: string, description: string): Res => ({ status: 400, 
 function session(req: Req): Session | null {
   const auth = req.headers.authorization ?? req.headers.Authorization ?? '';
   const s = state.access[auth.replace(/^Bearer /, '')];
-  return s && s.exp > Date.now() && state.identities.some((i) => i.id === s.sub) ? s : null;
+  if (!s || s.exp <= Date.now() || !state.identities.some((i) => i.id === s.sub)) return null;
+  // A signed-out device is refused at once, not when its token expires (F3-S03).
+  const device = activeDevice(s.sid);
+  if (!device) return null;
+  device.lastSeenAt = new Date().toISOString();
+  return s;
 }
 
-function profile(i: Identity, currentApp: string | null) {
+function profile(i: Identity, currentApp: string | null, devices?: unknown[]) {
   const appRoles = currentApp ? (APPS[currentApp]?.roles ?? []) : [];
   return {
     identityId: i.id,
@@ -498,6 +581,7 @@ function profile(i: Identity, currentApp: string | null) {
         app: Object.keys(APPS).find((k) => APPS[k].roles.includes(r.role)) ?? null,
       })),
     kyc: { ...i.kyc },
+    devices: devices ?? null,
   };
 }
 
@@ -535,6 +619,57 @@ function duplicates() {
     }));
 }
 
+function createFromLegacy(a: (typeof PHASE1)[number]): { identity: Identity; invalid: number } {
+  const partner = a.app === 'partner-app';
+  const createdAt = new Date(a.createdAt).toISOString();
+  const identity: Identity = {
+    id: uuid(),
+    displayName: a.name,
+    source: partner ? 'legacy-partner-app' : 'legacy-user-app',
+    createdVia: 'bootstrap',
+    createdAt,
+    password: null,
+    failedPasswords: 0,
+    lockedUntil: null,
+    contacts: [],
+    roles: [
+      {
+        role: partner ? ({ coach: 'Coach', physio: 'Physio', nutritionist: 'Nutritionist' }[a.partnerType ?? ''] ?? 'FacilityPartner') : 'Player',
+        grantedVia: 'bootstrap',
+        grantedAt: createdAt,
+      },
+    ],
+    kyc:
+      a.kycStatus === 'verified'
+        ? { ...emptyKyc(), status: 'Verified', docType: 'Phase 1 record', submittedVia: a.app, verifiedAt: createdAt }
+        : emptyKyc(),
+  };
+  let invalid = 0;
+  for (const raw of [a.mobile, a.email]) {
+    if (!raw) continue;
+    const id = normalise(raw);
+    if (!id) {
+      invalid++;
+      continue;
+    }
+    identity.contacts.push({ type: id.type, value: id.value, verified: false, verifiedAt: null, source: 'legacy-bootstrap' });
+  }
+  state.identities.push(identity);
+  state.legacyMap.push({ app: a.app, legacyId: a.id, identityId: identity.id });
+  return { identity, invalid };
+}
+
+/** One Phase 1 account's identity, bootstrapping just that account if needed (F3-S05 hand-over). */
+function ensureAccount(app: string, legacyId: number): Identity | null {
+  const map = state.legacyMap.find((m) => m.app === app && m.legacyId === legacyId);
+  if (map) return state.identities.find((i) => i.id === map.identityId) ?? null;
+  const account = PHASE1.find((x) => x.app === app && x.id === legacyId);
+  if (!account) return null;
+  const { identity } = createFromLegacy(account);
+  audit('PHASE1_ACCOUNT_BOOTSTRAPPED', identity.id, app, { legacyId, reason: 'Signed-in Phase 1 session moved to Shared Identity' });
+  return identity;
+}
+
 function bootstrap() {
   let created = 0;
   let skipped = 0;
@@ -544,54 +679,15 @@ function bootstrap() {
       skipped++;
       continue;
     }
-    const partner = a.app === 'partner-app';
-    const createdAt = new Date(a.createdAt).toISOString();
-    const identity: Identity = {
-      id: uuid(),
-      displayName: a.name,
-      source: partner ? 'legacy-partner-app' : 'legacy-user-app',
-      createdVia: 'bootstrap',
-      createdAt,
-      password: null,
-      failedPasswords: 0,
-      lockedUntil: null,
-      contacts: [],
-      roles: [
-        {
-          role: partner
-            ? ({ coach: 'Coach', physio: 'Physio', nutritionist: 'Nutritionist' }[a.partnerType ?? ''] ?? 'FacilityPartner')
-            : 'Player',
-          grantedVia: 'bootstrap',
-          grantedAt: createdAt,
-        },
-      ],
-      kyc:
-        a.kycStatus === 'verified'
-          ? {
-              status: 'Verified',
-              docType: 'Phase 1 record',
-              docRefMasked: null,
-              submittedVia: a.app,
-              submittedAt: null,
-              verifiedAt: createdAt,
-            }
-          : emptyKyc(),
-    };
-    for (const raw of [a.mobile, a.email]) {
-      if (!raw) continue;
-      const id = normalise(raw);
-      if (!id) {
-        invalid++;
-        continue;
-      }
-      identity.contacts.push({ type: id.type, value: id.value, verified: false, verifiedAt: null, source: 'legacy-bootstrap' });
-    }
-    state.identities.push(identity);
-    state.legacyMap.push({ app: a.app, legacyId: a.id, identityId: identity.id });
+    invalid += createFromLegacy(a).invalid;
     created++;
   }
   const dupes = duplicates();
-  audit('BOOTSTRAP_RUN', null, null, { created, skipped, invalid, duplicateGroups: dupes.length });
+  const reconciliation = { phase1Accounts: PHASE1.length, mappedIdentities: state.legacyMap.length, matches: PHASE1.length === state.legacyMap.length };
+  audit('BOOTSTRAP_RUN', null, null, {
+    created, skipped, invalid, duplicateGroups: dupes.length,
+    reconciliation: `${reconciliation.phase1Accounts} Phase 1 accounts, ${reconciliation.mappedIdentities} identities`,
+  });
   return {
     phase1UserApp: PHASE1.filter((a) => a.app === 'user-app').length,
     phase1PartnerApp: PHASE1.filter((a) => a.app === 'partner-app').length,
@@ -599,6 +695,7 @@ function bootstrap() {
     alreadyMapped: skipped,
     invalidIdentifiers: invalid,
     duplicateCandidates: dupes,
+    reconciliation,
   };
 }
 
@@ -644,6 +741,9 @@ function route(req: Req): Res {
         'locked_out',
         `Too many incorrect codes for this number. Try again after ${new Date(lock.lockedUntil).toLocaleTimeString()}.`,
       );
+    const deviceId = req.headers['X-Device-Id'] || null;
+    if (deviceId && state.challenges.filter((c) => c.deviceId === deviceId && c.createdAt > now - OTP.windowMin * MIN).length >= OTP.maxPerDevice)
+      return problem(429, 'device_rate_limited', 'Too many codes requested from this device. Please wait and try again.');
     if (state.challenges.filter((c) => c.destination === id.value && c.createdAt > now - OTP.windowMin * MIN).length >= OTP.maxRequests)
       return problem(429, 'rate_limited', 'Too many codes requested for this number. Please wait and try again.');
 
@@ -658,6 +758,7 @@ function route(req: Req): Res {
       expiresAt: now + OTP.ttlMin * MIN,
       attempts: 0,
       consumed: false,
+      deviceId,
     };
     state.challenges.push(challenge);
     state.inbox.push({
@@ -700,6 +801,8 @@ function route(req: Req): Res {
     if (app.gated && !state.flags.f3)
       return tokenError('access_denied', 'f3_disabled: Shared Identity is switched off. Use the Phase 1 login.');
     const grant = f.get('grant_type');
+    const signIn = (identity: Identity, method: string, outcome: string, roleAdded?: string) =>
+      ok(issue(identity, clientId, outcome, roleAdded, startSession(identity.id, clientId, f.get('device_id'), f.get('device_name'), method)));
 
     if (grant === 'urn:sportseek:grant-type:otp') {
       const ch = state.challenges.find((c) => c.id === f.get('challenge_id') && c.client === clientId);
@@ -742,7 +845,7 @@ function route(req: Req): Res {
       delete state.lockouts[ch.destination];
       const r = completeOtp(clientId, id, f.get('role') ?? undefined, f.get('name') ?? undefined);
       if (r.outcome === 'Refused') return tokenError('access_denied', 'This account does not have access to the Admin Portal.');
-      return ok(issue(r.identity!, clientId, r.outcome, r.roleAdded));
+      return signIn(r.identity!, 'otp', r.outcome, r.roleAdded);
     }
 
     if (grant === 'password') {
@@ -765,7 +868,7 @@ function route(req: Req): Res {
         );
       }
       audit('PASSWORD_SIGN_IN', identity.id, clientId);
-      return ok(issue(identity, clientId, 'SignedIn'));
+      return signIn(identity, 'password', 'SignedIn');
     }
 
     if (grant === 'refresh_token') {
@@ -773,8 +876,28 @@ function route(req: Req): Res {
       const identity = rt && rt.client === clientId ? state.identities.find((i) => i.id === rt.sub) : undefined;
       if (!identity || !identity.roles.some((r) => app.roles.includes(r.role)))
         return tokenError('invalid_grant', 'The refresh token is no longer valid.');
+      if (!activeDevice(rt.sid)) return tokenError('invalid_grant', 'device_signed_out: This device was signed out. Sign in again.');
       delete state.refresh[f.get('refresh_token')!]; // rotation
-      return ok(issue(identity, clientId, 'Refreshed'));
+      return ok(issue(identity, clientId, 'Refreshed', undefined, rt.sid));
+    }
+
+    if (grant === 'urn:sportseek:grant-type:phase1-session') {
+      // F3-S05: a Phase 1 sign-in moves onto Shared Identity when F3 is switched on, without signing in again.
+      let payload: { app?: string; legacyId?: number; exp?: number } = {};
+      try {
+        payload = JSON.parse(decodeURIComponent(escape(atob(f.get('phase1_session') ?? ''))));
+      } catch {
+        payload = {};
+      }
+      if (payload.app !== clientId || typeof payload.legacyId !== 'number' || (payload.exp ?? 0) < Date.now())
+        return tokenError('invalid_grant', "The Phase 1 session can't be moved. Sign in again.");
+      const identity = ensureAccount(payload.app, payload.legacyId);
+      if (!identity || !identity.roles.some((r) => app.roles.includes(r.role)))
+        return tokenError('invalid_grant', 'The Phase 1 account was not found. Sign in again.');
+      audit('PHASE1_SESSION_MIGRATED', identity.id, clientId, {
+        legacyId: payload.legacyId, reason: 'Shared Identity switched on: Phase 1 session moved without signing in again',
+      });
+      return signIn(identity, 'phase1-migration', 'Migrated');
     }
     return tokenError('unsupported_grant_type', 'Grant type not supported.');
   }
@@ -794,6 +917,7 @@ function route(req: Req): Res {
     audit('PHASE1_LOGIN', null, body.client!, { legacyId: a.id });
     return ok({
       mode: 'phase1',
+      migrationToken: btoa(unescape(encodeURIComponent(JSON.stringify({ app: a.app, legacyId: a.id, exp: Date.now() + 12 * 3600_000 })))),
       app: a.app,
       legacyId: a.id,
       name: a.name,
@@ -809,6 +933,25 @@ function route(req: Req): Res {
     if (!s) return { status: 401 };
     const me = state.identities.find((i) => i.id === s.sub)!;
     if (method === 'GET' && path === '/api/me') return ok(profile(me, s.client));
+    if (method === 'GET' && path === '/api/me/sessions')
+      return ok(
+        state.devices
+          .filter((d) => d.identityId === me.id)
+          .sort((a, b) => Number(!!a.revokedAt) - Number(!!b.revokedAt) || b.lastSeenAt.localeCompare(a.lastSeenAt))
+          .slice(0, 20)
+          .map((d) => deviceView(d, s.sid)),
+      );
+    const revoke = path.match(/^\/api\/me\/sessions\/([^/]+)\/revoke$/);
+    if (method === 'POST' && revoke) {
+      const d = state.devices.find((x) => x.id === revoke[1] && x.identityId === me.id && !x.revokedAt);
+      if (!d) return problem(404, 'not_found', 'That device is already signed out.');
+      d.revokedAt = new Date().toISOString();
+      d.revokedBy = `you, from the ${APPS[s.client].name}`;
+      audit('DEVICE_SIGNED_OUT', me.id, d.client, {
+        device: d.deviceName, by: d.revokedBy, reason: 'Signed out on this device only; other devices stay signed in',
+      });
+      return ok({ revoked: true });
+    }
     if (method === 'PUT' && path === '/api/me/profile') {
       const name = String(json().displayName ?? '').trim();
       if (!name) return problem(400, 'invalid_name', 'Name is required.');
@@ -828,6 +971,8 @@ function route(req: Req): Res {
         submittedVia: s.client,
         submittedAt: new Date().toISOString(),
         verifiedAt: null,
+        rejectedReason: null,
+        rejectedAt: null,
       };
       audit('KYC_SUBMITTED', me.id, s.client, { docType: b.docType ?? null, doc: me.kyc.docRefMasked });
       return ok(profile(me, s.client));
@@ -849,13 +994,37 @@ function route(req: Req): Res {
     if (s.client !== 'admin-portal' || !s.roles.includes('Admin')) return { status: 403 };
 
     if (method === 'GET' && path === '/api/admin/identities')
-      return ok([...state.identities].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((i) => profile(i, null)));
+      return ok(
+        [...state.identities]
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+          .map((i) =>
+            profile(
+              i,
+              null,
+              state.devices.filter((d) => d.identityId === i.id && !d.revokedAt).map((d) => deviceView(d, null)),
+            ),
+          ),
+      );
+    const reject = path.match(/^\/api\/admin\/identities\/([^/]+)\/kyc\/reject$/);
+    if (method === 'POST' && reject) {
+      const reason = String(json().reason ?? '').trim();
+      if (reason.length < 5) return problem(400, 'reason_required', 'Give the person a reason (at least 5 characters) so they can fix it.');
+      const i = state.identities.find((x) => x.id === reject[1]);
+      if (!i || i.kyc.status !== 'Submitted') return problem(409, 'not_submitted', 'KYC has not been submitted.');
+      i.kyc.status = 'Rejected';
+      i.kyc.rejectedReason = reason;
+      i.kyc.rejectedAt = new Date().toISOString();
+      audit('KYC_REJECTED', i.id, 'admin-portal', { by: 'SportSeek Ops Admin', reason });
+      return ok({ status: 'Rejected' });
+    }
     const kyc = path.match(/^\/api\/admin\/identities\/([^/]+)\/kyc\/verify$/);
     if (method === 'POST' && kyc) {
       const i = state.identities.find((x) => x.id === kyc[1]);
       if (!i || i.kyc.status !== 'Submitted') return problem(409, 'not_submitted', 'KYC has not been submitted.');
       i.kyc.status = 'Verified';
       i.kyc.verifiedAt = new Date().toISOString();
+      i.kyc.rejectedReason = null;
+      i.kyc.rejectedAt = null;
       audit('KYC_VERIFIED', i.id, 'admin-portal', { by: 'SportSeek Ops Admin' });
       return ok({ status: 'Verified' });
     }

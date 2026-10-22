@@ -1,5 +1,5 @@
 import { LitElement, css, html, nothing } from 'lit';
-import { API_URL, APP_VERSION, isBelow, loadSession, makeApi, saveSession } from './api.js';
+import { API_URL, APP_VERSION, isBelow, loadPhase1, loadSession, makeApi, savePhase1, saveSession } from './api.js';
 import { APPS, base, mark } from './shared.js';
 import './signin.js';
 import './profile.js';
@@ -156,7 +156,11 @@ export class SsApp extends LitElement {
     this._tokens = loadSession(this.variant);
     const load = () =>
       this._api.config().then(
-        (c) => ((this._config = c), (this._configError = null)),
+        (c) => {
+          this._config = c;
+          this._configError = null;
+          this._migratePhase1(c);
+        },
         (e) => (this._configError = e.message),
       );
     load();
@@ -172,6 +176,25 @@ export class SsApp extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     clearInterval(this._poll);
+  }
+
+  /**
+   * F3-S05: if someone signed in with the Phase 1 login while F3 was off, move that session onto
+   * Shared Identity as soon as F3 is on again, without asking them to sign in.
+   */
+  async _migratePhase1(config) {
+    if (this.variant === 'admin' || !config.sharedIdentityEnabled || this._tokens || this._migrating) return;
+    const phase1 = loadPhase1(this.variant);
+    if (!phase1?.migrationToken) return;
+    this._migrating = true;
+    try {
+      this._setTokens(await this._api.migratePhase1(phase1.migrationToken));
+    } catch {
+      // Hand-over not possible (expired, API restarted): fall back to a normal sign-in.
+    } finally {
+      savePhase1(this.variant, null);
+      this._migrating = false;
+    }
   }
 
   _setTokens(t) {

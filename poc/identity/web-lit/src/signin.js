@@ -124,6 +124,26 @@ export class SsSignIn extends LitElement {
         color: var(--faint);
         padding: 6px;
       }
+      .demo {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        text-align: left;
+        border: 1px dashed var(--brand);
+        background: var(--brand-tint);
+        color: var(--text);
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .demo b {
+        color: var(--brand-deep);
+        font-size: 13.5px;
+      }
+      .demo:hover {
+        border-style: solid;
+      }
       .foot {
         text-align: center;
         font-size: 12px;
@@ -206,6 +226,22 @@ export class SsSignIn extends LitElement {
       this.dispatchEvent(new CustomEvent('signed-in', { detail: t, bubbles: true, composed: true }));
     });
 
+  // F3-S01: a clear retry when a code is wrong or has expired.
+  _resend = () =>
+    this._run(async () => {
+      this._start = await this.api.requestOtp(this._identifier, this.variant === 'admin' ? undefined : this._role);
+      this._code = '';
+      this._sms = null;
+      this._watchInbox();
+    });
+
+  _useDemo = () => {
+    this._mode = 'password';
+    this._identifier = '+91 90000 00002';
+    this._password = 'Demo@2026';
+    this._error = null;
+  };
+
   _reset = () => {
     clearInterval(this._poll);
     this._start = null;
@@ -249,7 +285,7 @@ export class SsSignIn extends LitElement {
         </div>
 
         <div class="card stack rise">
-          ${v !== 'admin' && !s
+          ${!s
             ? html`<div class="segmented" role="group" aria-label="Sign-in method">
                 ${[
                   ['otp', 'One-time code'],
@@ -345,9 +381,19 @@ export class SsSignIn extends LitElement {
             ? html`<button class="btn" ?disabled=${this._code.length !== 6 || this._busy} @click=${this._verify}>
                   ${this._busy ? 'Verifying…' : verifyLabel}
                 </button>
-                <button class="btn ghost" @click=${this._reset}>Use a different number</button>`
+                <div class="row" style="gap:8px">
+                  <button class="btn ghost" style="flex:1" ?disabled=${this._busy} @click=${this._resend}>Send a new code</button>
+                  <button class="btn ghost" style="flex:1" @click=${this._reset}>Different number</button>
+                </div>`
             : nothing}
         </div>
+        ${!s && v !== 'admin'
+          ? html`<button class="demo" @click=${this._useDemo}>
+              <b>Demo identity: Kavya Reddy</b>
+              <span>Player on the User App and Coach on the Partner App: one SportSeek ID, one password. Tap to fill in.</span>
+            </button>`
+          : nothing}
+        ${!s && v === 'admin' ? html`<p class="foot">Demo admin: +91 90000 00001, code or password Admin@2026.</p>` : nothing}
         <p class="foot">
           ${this._mode === 'password' && !s
             ? 'A password never adds a new app to your account. Use a one-time code for that.'

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using SportSeek.Identity.Api.Domain;
@@ -16,12 +17,19 @@ public static class Seeder
     public const string AdminPhone = "+919000000001";
     public const string LegacyDemoPassword = "demo1234";
     public const string OtpGrantType = "urn:sportseek:grant-type:otp";
+    public const string Phase1SessionGrantType = "urn:sportseek:grant-type:phase1-session";
+
+    // Ready-made demo identity: one person who already holds roles in both apps (seeded on start and on reset).
+    public const string DemoPhone = "+919000000002";
+    public const string DemoPassword = "Demo@2026";
+    public const string AdminPassword = "Admin@2026";
 
     public static async Task InitialiseAsync(IServiceProvider services)
     {
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IdentityDb>();
         await db.Database.EnsureCreatedAsync();
+        await UpgradeSchemaAsync(db);
         await CreateLegacySchemaAsync(db);
         await SeedClientsAsync(scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>());
         await SeedCoreAsync(db);
@@ -34,7 +42,8 @@ public static class Seeder
             TRUNCATE identity.audit_log, identity.otp_challenges, identity.otp_lockouts, identity.legacy_id_map,
                      identity.kyc, identity.role_assignments, identity.contacts, identity.identity_claims,
                      identity.identity_logins, identity.identity_tokens, identity.identities,
-                     identity.feature_flags, identity.oidc_tokens, identity.oidc_authorizations CASCADE;
+                     identity.feature_flags, identity.oidc_tokens, identity.oidc_authorizations,
+                     identity.device_sessions CASCADE;
             """);
         await SeedCoreAsync(db);
     }
@@ -59,16 +68,75 @@ public static class Seeder
             admin.Contacts.Add(new Contact { Type = "phone", Value = AdminPhone, Verified = true, VerifiedAt = DateTimeOffset.UtcNow, Source = "seed" });
             admin.Roles.Add(new RoleAssignment { Role = Roles.Admin, GrantedVia = "seed" });
             admin.Kyc = new Kyc();
+            admin.PasswordHash = new PasswordHasher<AppIdentity>().HashPassword(admin, AdminPassword);
             db.Users.Add(admin);
         }
+
+        // An admin seeded by an earlier build has no password yet.
+        var existingAdmin = await db.Users.FirstOrDefaultAsync(u => u.PasswordHash == null && db.Contacts.Any(c => c.IdentityId == u.Id && c.Value == AdminPhone));
+        if (existingAdmin is not null) existingAdmin.PasswordHash = new PasswordHasher<AppIdentity>().HashPassword(existingAdmin, AdminPassword);
+
+        if (!await db.Contacts.AnyAsync(c => c.Value == DemoPhone))
+        {
+            // Kavya plays on the User App and coaches on the Partner App: one identity, two app roles,
+            // KYC verified once, one password. Lets a demo show Shared Identity without registering first.
+            var now = DateTimeOffset.UtcNow;
+            var kavya = new AppIdentity
+            {
+                Id = Guid.NewGuid(), DisplayName = "Kavya Reddy", CreatedVia = Apps.UserApp, CreatedAt = now.AddDays(-40),
+                SecurityStamp = Guid.NewGuid().ToString("N"),
+            };
+            kavya.UserName = kavya.Id.ToString("N");
+            kavya.NormalizedUserName = kavya.UserName.ToUpperInvariant();
+            kavya.Contacts.Add(new Contact { Type = "phone", Value = DemoPhone, Verified = true, VerifiedAt = now.AddDays(-40), Source = "seed" });
+            kavya.Contacts.Add(new Contact { Type = "email", Value = "kavya.reddy@example.com", Verified = true, VerifiedAt = now.AddDays(-40), Source = "seed" });
+            kavya.Roles.Add(new RoleAssignment { Role = Roles.Player, GrantedVia = Apps.UserApp, GrantedAt = now.AddDays(-40) });
+            kavya.Roles.Add(new RoleAssignment { Role = Roles.Coach, GrantedVia = Apps.PartnerApp, GrantedAt = now.AddDays(-12) });
+            kavya.Kyc = new Kyc
+            {
+                Status = "Verified", DocType = "PAN", DocRefMasked = "••••••567K", SubmittedVia = Apps.PartnerApp,
+                SubmittedAt = now.AddDays(-12), VerifiedAt = now.AddDays(-11),
+            };
+            kavya.PasswordHash = new PasswordHasher<AppIdentity>().HashPassword(kavya, DemoPassword);
+            db.Users.Add(kavya);
+        }
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Brings a database created by an earlier POC build up to date. EnsureCreated only acts on an
+    /// empty database, so additive changes are applied here and are safe to run on every start.
+    /// </summary>
+    private static async Task UpgradeSchemaAsync(IdentityDb db)
+    {
+        await db.Database.ExecuteSqlRawAsync("""
+            ALTER TABLE identity.otp_challenges ADD COLUMN IF NOT EXISTS device_id text;
+            ALTER TABLE identity.kyc ADD COLUMN IF NOT EXISTS rejected_reason text;
+            ALTER TABLE identity.kyc ADD COLUMN IF NOT EXISTS rejected_at timestamp with time zone;
+            CREATE TABLE IF NOT EXISTS identity.device_sessions (
+                id uuid PRIMARY KEY,
+                identity_id uuid NOT NULL REFERENCES identity.identities (id) ON DELETE CASCADE,
+                client text NOT NULL, device_id text NOT NULL, device_name text NOT NULL, sign_in_method text NOT NULL,
+                created_at timestamp with time zone NOT NULL, last_seen_at timestamp with time zone NOT NULL,
+                revoked_at timestamp with time zone NULL, revoked_by text NULL);
+            CREATE INDEX IF NOT EXISTS ix_device_sessions_identity_id ON identity.device_sessions (identity_id);
+            """);
     }
 
     private static async Task SeedClientsAsync(IOpenIddictApplicationManager manager)
     {
         foreach (var app in Apps.All)
         {
-            if (await manager.FindByClientIdAsync(app.ClientId) is not null) continue;
+            var existing = await manager.FindByClientIdAsync(app.ClientId);
+            if (existing is not null)
+            {
+                // Clients registered by an earlier build get grant types added since.
+                var current = new OpenIddictApplicationDescriptor();
+                await manager.PopulateAsync(current, existing);
+                if (current.Permissions.Add(Permissions.Prefixes.GrantType + Phase1SessionGrantType))
+                    await manager.UpdateAsync(existing, current);
+                continue;
+            }
             var descriptor = new OpenIddictApplicationDescriptor
             {
                 ClientId = app.ClientId,
@@ -80,6 +148,7 @@ public static class Seeder
                     Permissions.GrantTypes.Password,
                     Permissions.GrantTypes.RefreshToken,
                     Permissions.Prefixes.GrantType + OtpGrantType,
+                    Permissions.Prefixes.GrantType + Phase1SessionGrantType,
                     Permissions.Scopes.Profile,
                     Permissions.Scopes.Roles,
                 },
